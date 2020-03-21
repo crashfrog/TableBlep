@@ -2,8 +2,8 @@
   "name": "TableBlep",
   "version": "0.1.0",
   "description": "TableBlep",
-  "engines" : {
-    "node" : ">=4"
+  "engines": {
+    "node": ">=4"
   },
   "main": "src/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "dev": "NODE_ENV=local npm run babel -- ./node_modules/.bin/webpack-dev-server --progress --hot",
     "python": "python manage.py runserver",
     "start": "npm run dev & npm run python"
-    },
+  },
   "author": "Justin Payne",
   "license": "ISC",
   "repository": {
@@ -47,7 +47,7 @@
     "html-webpack-plugin": "^2.22.0",
     "imports-loader": "^0.6.5",
     "lodash": "^4.15.0",
-    "node-sass": "^3.7.0",
+    "node-sass": "^4.13.1",
     "react": "^15.3.1-rc.1",
     "react-dom": "^15.3.1-rc.1",
     "react-redux": "^5.0.0-alpha.1",
@@ -63,7 +63,8 @@
     "webpack-dev-server": "^2.1.0-beta.0",
     "whatwg-fetch": "^1.0.0",
     "cannon": "^0.6.2",
-    "three":"^0.114.0",
+    "three": "^0.114.0",
+    "js-threads-client":"^0.2.6"
   },
   "devDependencies": {
     "babel-plugin-__coverage__": "^11.0.0",
@@ -71,7 +72,7 @@
     "eslint-loader": "^1.5.0",
     "expect": "^1.20.2",
     "force-case-sensitivity-webpack-plugin": "^0.1.1",
-    "karma": "^1.2.0",
+    "karma": "^4.4.1",
     "karma-babel-preprocessor": "^6.0.1",
     "karma-browserify": "^5.1.0",
     "karma-chrome-launcher": "^1.0.1",

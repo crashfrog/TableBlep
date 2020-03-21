@@ -24,7 +24,7 @@
 
 </head>
 <body>
-<% if (htmlWebpackPlugin.options.unsupportedBrowser) { %>
+<% if (htmlWebpackPlugin.options.unsupportedBrowser || !WEBGL.isWebGLAvailable()) { %>
 <style>.unsupported-browser { display: none; }</style>
 <div class="unsupported-browser">
   Sorry, your browser is not supported.  Please upgrade to
