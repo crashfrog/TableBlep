@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "babel-plugin-__coverage__": "^11.0.0",
-    "eslint": "^3.3.0",
+    "eslint": "^6.8.0",
     "eslint-loader": "^1.5.0",
     "expect": "^1.20.2",
     "force-case-sensitivity-webpack-plugin": "^0.1.1",
