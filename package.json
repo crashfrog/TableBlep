@@ -61,7 +61,9 @@
     "webpack": "^2.1.0-beta.23",
     "webpack-bundle-tracker": "0.0.93",
     "webpack-dev-server": "^2.1.0-beta.0",
-    "whatwg-fetch": "^1.0.0"
+    "whatwg-fetch": "^1.0.0",
+    "cannon": "^0.6.2",
+    "three":"^0.114.0",
   },
   "devDependencies": {
     "babel-plugin-__coverage__": "^11.0.0",
