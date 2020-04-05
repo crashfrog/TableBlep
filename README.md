@@ -16,6 +16,10 @@ Eventually:
 
 5) one-page random dungeon generator
 6) trap the discord audio input stream and "hop" individual minis as they speak
+7) attention indicators (dotted line between player "looker" and piece "lookee"
+8) dumb decal effects
+9) "Ready check"
+
 
 Libraries:
 Textile

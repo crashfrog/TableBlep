@@ -1,6 +1,5 @@
-import Scene from 'Scene';
-import * as TEXTILE from 'Textile';
-import * as EVENTS from 'eventTypes'
+import {Client} from '@textile/threads-client';
+import EVENTS from './eventTypes.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import uuid from 'uuid/v4';
 
@@ -8,7 +7,7 @@ export default class Model {
 
     constructor(view, scene, tx_thread){
         this.scene = scene; // the three.js scene and its physics
-        this.tx_thread - tx_thread;
+        this.tx_thread = tx_thread;
         this.view = view; // the react UI with the chat window
 
         // a series of maps to cache mesh data
@@ -17,13 +16,14 @@ export default class Model {
         this.owner_by_obj = new Map();
 
         //init the client
+        const key_prefix = "blep"
         const name = "Some name";
-        const key = `${keyPrefix}-${uuid()}`;
+        const key = `${key_prefix}-${uuid()}`;
         const config = {
             key,
             name,
-            type: Thread.Type.OPEN,
-            sharing: Thread.Sharing.SHARED,
+            //type: Thread.Type.OPEN,
+            //sharing: Thread.Sharing.SHARED,
             schema: { id: '', json: JSON.stringify(event_schema)},
             force: false,
             whitelist: []
@@ -45,26 +45,26 @@ export default class Model {
             // we only need to update the model during add and remove mesh events
             if (event.type == EVENTS.AddItem) { 
                 //check if the mesh isn't already loaded
-                if (!this.obj_by_mesh.has(event.mesh_id)){
+                if (!this.obj_by_mesh.has(event.mesh.mesh_id)){
                     // get mesh data from IPFS via URI
                     let mesh = await this.tx_thread.resolve(event.mesh_ref);
                     //add it to the maps
-                    this.obj_by_mesh.set(mesh_id, new Set([event.obj_id]));
-                    this.mesh_by_id.set(event.mesh_ref, mesh);
+                    this.obj_by_mesh.set(event.mesh.mesh_id, new Set([event.obj_id]));
+                    this.mesh_by_id.set(event.mesh.mesh_ref, mesh);
                 } else {
                     //we already have it, and three.js has optimizations for mesh re-use
-                    this.obj_by_mesh.get(event.mesh_id).add(event.obj_id);
+                    this.obj_by_mesh.get(event.mesh.mesh_id).add(event.obj_id);
                 }
                 if (event.owner){
                     // meshes might be "owned" by one of the players,
                     // we keep track of who owns what
-                    this.owner_by_obj.set(event.owner.user_id, mesh_id);
+                    this.owner_by_obj.set(event.owner.user_id, event.mesh.mesh_id);
                 }
             } else if (event.type == EVENTS.RemoveItem) {
-                const objs = this.obj_by_mesh.get(event.mesh_id);
+                const objs = this.obj_by_mesh.get(event.mesh.mesh_id);
                 objs.delete(event.obj_id);
                 if (objs.size == 0){
-                    this.mesh_by_id.delete(event.mesh_ref)
+                    this.mesh_by_id.delete(event.mesh.mesh_ref)
                 }
             }
             // allow the scene and view to process the event
@@ -238,6 +238,33 @@ const init_schema = {
     }
 };
 
+const spray_schema = {
+    "description": "Add a spray to the playfield",
+    "type": "object",
+    "properties": {
+        "sprite": {
+            "type": "string",
+            "enum": ["fluid", "gel"]
+        },
+        "color": {
+            "type": "string",
+            "description": "Color in hex code"
+        },
+        "origin": {
+            "type": "object",
+            "description": "position and quaternion for origin of spray",
+            "properties": {
+                "position": {
+                    "type": {"$ref": "#/definitions/triplet"}
+                },
+                "rotation": {
+                    "type": {"$ref": "#/definitions/triplet"}
+                }
+            }
+        }
+    }
+}
+
 const event_schema = {
     "$schema": "https://json-schema.org/draft-07/schema#",
     "$id": "https://tableblep.com/event.schema.json",
@@ -250,7 +277,8 @@ const event_schema = {
         "add_item": add_item_schema,
         "remove_item": remove_item_schema,
         "move_item": move_item_schema,
-        "initialize": init_schema
+        "initialize": init_schema,
+        "spray": spray_schema
     },
     "type": "object",
     "properties": {
@@ -259,7 +287,8 @@ const event_schema = {
                      {"$ref": "#/definitions/add_item"},
                      {"$ref": "#/definitions/remove_item"},
                      {"$ref": "#/definitions/move_item"},
-                     {"$ref": "#/definitions/initialize"}]
+                     {"$ref": "#/definitions/initialize"},
+                     {"$ref": "#/definitions/spray"}]
         }
     }
 }
