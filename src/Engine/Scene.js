@@ -3,6 +3,27 @@ import * as THREE from 'three';
 import C from 'cannon';
 import EVENTS from './eventTypes.js';
 
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+
+function oneInchGrid(){
+    var grid = new THREE.GridHelper( 2500, 100, 0xFFFFFF, 0x5555FF );
+    grid.material.opacity = 0.5;
+    grid.material.transparent = true;
+    return grid;
+}
+
+function loadMesh(scene, x, y, z){
+    return (geometry) => {
+        var material = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.position.set( x , y , z);
+        mesh.castShadow = true;
+		mesh.receiveShadow = true;
+
+		scene.add( mesh );
+    }
+}
+
 export default class Scene {
 
     constructor(model, world){
@@ -20,15 +41,17 @@ export default class Scene {
         //this.mount.appendChild( this.renderer.domElement );
         this.scene.add(this.camera)
 
-        this.scene.background = new THREE.Color( 0xa0a0a0 );
+        this.scene.background = new THREE.Color( 0x000000 );
         this.scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
         // test cube
-        var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+        var geometry = new THREE.BoxGeometry( 25, 25, 25 );
+        var material = new THREE.MeshPhongMaterial( { color: 0x00ff00 } );
         var cube = new THREE.Mesh( geometry, material );
-        this.scene.add( cube );
-        this.camera.position.set( 0, 5, 10 );
+        cube.position.set(0,25,0);
+        
+        this.camera.position.set( 0, 50, 75 );
+        this.camera.rotateX(-.5);
         //this.camera.position.z = 5;
 
 
@@ -54,23 +77,38 @@ export default class Scene {
         directionalLight.shadow.camera.right = 120;
         this.scene.add( directionalLight );
 
-        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x0000000, depthWrite: false } ) );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
 
-        var grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
-        grid.material.opacity = 0.2;
-        grid.material.transparent = true;
-        this.scene.add( grid );
+        
+        this.scene.add( oneInchGrid() );
+
+        //this.scene.add( cube );
+
+        var loader = new STLLoader();
+
+        loader.load('./sample_meshes/brick_wall.stl', loadMesh(this.scene, 0,15,0), (e) => null, (e) => alert(e));
 
         
 
         var renderer = this.renderer;
         var scene = this.scene;
         var camera = this.camera;
+        var meshes = this.meshes;
+        var bodies = this.bodies;
+        // var world = this.world;
 
         var animate = function() {
+
+            world.step(2);
+
+            for (var tuple of meshes.map((k, i) => [k, bodies[i]])) {
+                var [mesh, body] = tuple;
+                mesh.position.copy(body.position);
+                mesh.quarternion.copy(body.quarternion);
+            }
 
             requestAnimationFrame( animate );
             cube.rotation.x += 0.01;

@@ -33,17 +33,17 @@ export default class Model {
     }
 
     owns(user_id, mesh_id){
-        return this.owner_by_obj.get(mesh_id) == user_id;
+        return this.owner_by_obj.get(mesh_id) === user_id;
     }
 
     async getNewEvents(){
-
+        return [];
     }
 
     async checkForEvents(){
-        for (const event of this.getNewEvents()){
+        for (const event of await this.getNewEvents()){
             // we only need to update the model during add and remove mesh events
-            if (event.type == EVENTS.AddItem) { 
+            if (event.type === EVENTS.AddItem) { 
                 //check if the mesh isn't already loaded
                 if (!this.obj_by_mesh.has(event.mesh.mesh_id)){
                     // get mesh data from IPFS via URI
@@ -60,10 +60,10 @@ export default class Model {
                     // we keep track of who owns what
                     this.owner_by_obj.set(event.owner.user_id, event.mesh.mesh_id);
                 }
-            } else if (event.type == EVENTS.RemoveItem) {
+            } else if (event.type === EVENTS.RemoveItem) {
                 const objs = this.obj_by_mesh.get(event.mesh.mesh_id);
                 objs.delete(event.obj_id);
-                if (objs.size == 0){
+                if (objs.size === 0){
                     this.mesh_by_id.delete(event.mesh.mesh_ref)
                 }
             }
@@ -85,6 +85,25 @@ const point_schema = {
             "type": "number"
         },
         "z": {
+            "type": "number"
+        }
+    }
+};
+
+const quaternion_schema = {
+    "description": "wxyz quaternion",
+    "type": "object",
+    "properties": {
+        "x": {
+            "type": "number"
+        },
+        "y": {
+            "type": "number"
+        },
+        "z": {
+            "type": "number"
+        },
+        "w": {
             "type": "number"
         }
     }
@@ -124,7 +143,7 @@ const mesh_schema = {
         },
         "rotation": {
             "description": "Rotational quaternion",
-            "type": {"$ref":"#/definitions/triplet"}
+            "type": {"$ref":"#/definitions/quaternion"}
         },
         "layer": {
             "description": "layer mesh is added to",
@@ -258,7 +277,7 @@ const spray_schema = {
                     "type": {"$ref": "#/definitions/triplet"}
                 },
                 "rotation": {
-                    "type": {"$ref": "#/definitions/triplet"}
+                    "type": {"$ref": "#/definitions/quaternion"}
                 }
             }
         }
@@ -271,6 +290,7 @@ const event_schema = {
     "description": "Events",
     "definitions":{
         "triplet": point_schema,
+        "quarternion": quaternion_schema,
         "user": user_schema,
         "mesh": mesh_schema,
         "add_message": add_message_schema,
