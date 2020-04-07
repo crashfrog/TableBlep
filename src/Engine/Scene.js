@@ -14,7 +14,7 @@ function oneInchGrid(){
 
 function loadMesh(scene, x, y, z){
     return (geometry) => {
-        var material = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
+        var material = new THREE.MeshPhongMaterial( { color: 0x449944, specular: 0x111111, shininess: 200 } );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.position.set( x , y , z);
         mesh.castShadow = true;
@@ -89,7 +89,7 @@ export default class Scene {
 
         var loader = new STLLoader();
 
-        loader.load('file:///Users/justin/tableblep/src/sample_meshes/henfeather.stl', 
+        loader.load('./sample_meshes/henfeather.stl', 
                     loadMesh(this.scene, 0,15,0),
                     function(e) {console.info(e)},
                     function(e) {console.error(e)});
