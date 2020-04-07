@@ -89,7 +89,10 @@ export default class Scene {
 
         var loader = new STLLoader();
 
-        loader.load('./sample_meshes/brick_wall.stl', loadMesh(this.scene, 0,15,0), (e) => null, (e) => alert(e));
+        loader.load('file:///Users/justin/tableblep/src/sample_meshes/henfeather.stl', 
+                    loadMesh(this.scene, 0,15,0),
+                    function(e) {console.info(e)},
+                    function(e) {console.error(e)});
 
         
 

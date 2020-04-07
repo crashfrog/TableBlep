@@ -2,8 +2,6 @@ TableBleþ  ₍⸍⸌̣ʷ̣̫⸍̣⸌₎
 ===============================
 A monochrome, peer-to-peer VTT based on STL assets from HeroForge and the D&D 3D printing community
 
-[![Cookiecutter-webpack](https://img.shields.io/badge/built%20with-Cookiecutter%20Webpack-f38230.svg)][cookiecutter-webpack]
-
 
 Ideas:
 
