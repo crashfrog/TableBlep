@@ -2,6 +2,7 @@ import * as THREE from 'three';
 //import * as MODEL from 'model';
 import C from 'cannon';
 import EVENTS from './eventTypes.js';
+//import { threeToCannon } from 'three-to-cannon';
 
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 
@@ -18,9 +19,18 @@ function loadMesh(scene, x, y, z){
         var mesh = new THREE.Mesh( geometry, material );
         mesh.position.set( x , y , z);
         mesh.castShadow = true;
-		mesh.receiveShadow = true;
+        mesh.receiveShadow = true;
+        mesh.rotateX(-Math.PI / 2);
+        mesh.rotateZ(Math.PI / 2);
 
-		scene.add( mesh );
+        scene.scene.add( mesh );
+        scene.contents.push( [ new C.Body({
+            mass:10,
+            //shape: threeToCannon(mesh),
+            shape: new C.Box(new C.Vec3(25, 25, 45)),
+            position: new C.Vec3(x, y, z),
+            rotation: new C.Vec3(Math.PI / 2, 0, 0)
+        }), mesh ] );
     }
 }
 
@@ -33,8 +43,7 @@ export default class Scene {
         this.model = model;
         this.world = world;
 
-        this.meshes = [];
-        this.bodies = [];
+        this.contents = [];
 
         // initalize scene
         this.renderer.setSize( window.innerWidth, window.innerHeight );
@@ -90,7 +99,7 @@ export default class Scene {
         var loader = new STLLoader();
 
         loader.load('./sample_meshes/henfeather.stl', 
-                    loadMesh(this.scene, 0,15,0),
+                    loadMesh(this, 0,15,0),
                     function(e) {console.info(e)},
                     function(e) {console.error(e)});
 
@@ -99,23 +108,22 @@ export default class Scene {
         var renderer = this.renderer;
         var scene = this.scene;
         var camera = this.camera;
-        var meshes = this.meshes;
-        var bodies = this.bodies;
-        // var world = this.world;
+        var contents = this.contents;
+        var world = this.world;
 
         var animate = function() {
 
             world.step(2);
 
-            for (var tuple of meshes.map((k, i) => [k, bodies[i]])) {
-                var [mesh, body] = tuple;
+            contents.forEach(function(tuple) {
+                var [body, mesh] = tuple;
                 mesh.position.copy(body.position);
-                mesh.quarternion.copy(body.quarternion);
-            }
+                mesh.quaternion.copy(body.quaternion);
+            });
 
             requestAnimationFrame( animate );
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
+            //cube.rotation.x += 0.01;
+            //cube.rotation.y += 0.01;
 
             renderer.render(scene, camera);
         }
