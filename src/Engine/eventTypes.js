@@ -4,6 +4,7 @@ let events = {
     RemoveItem: "remove_item",
     MoveItem: "move_item",
     Initialize: "initialze",
+    Spray: "spray",
 };
 
 export default events;
