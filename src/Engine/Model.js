@@ -1,5 +1,7 @@
 import {Client} from '@textile/threads-client';
 import EVENTS from './eventTypes.js';
+import LAYERS from './layerTypes.js';
+import SPLATS from './splatTypes.js';
 
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -99,7 +101,7 @@ export default class Model {
     }
 
     injectEvent(event){
-
+        // TODO
     }
 
     addMessage(message, metadata={}){
@@ -250,7 +252,7 @@ const mesh_schema = {
         "layer": {
             "description": "layer mesh is added to",
             "type": "string",
-            "enum": ["map", "pieces", "noclip", "toybox"]
+            "enum": [LAYERS.Map, LAYERS.Pieces, LAYERS.Hologram, LAYERS.Toybox]
         }
     },
     "required": ['mesh_id']
@@ -361,7 +363,7 @@ const spray_schema = {
     "properties": {
         "sprite": {
             "type": "string",
-            "enum": ["fluid", "gel"]
+            "enum": [SPLATS.Fluid, SPLATS.Gel]
         },
         "color": {
             "type": "string",

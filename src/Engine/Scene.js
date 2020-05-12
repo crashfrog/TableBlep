@@ -2,20 +2,55 @@ import * as THREE from 'three';
 //import * as MODEL from 'model';
 import C from 'cannon';
 import EVENTS from './eventTypes.js';
+import LAYERS from './layerTypes.js';
+import SPLATS from './splatTypes.js';
 //import { threeToCannon } from 'three-to-cannon';
 
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+// import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-//import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
+//import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
+import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+
+const HORIZON = 0x000000;
+const GROUND = 0x222222;
 
 const TAU = 2 * Math.PI;
 //const loader = new STLLoader();
 
-const materials = { 'map':new THREE.MeshPhongMaterial( { color: 0x666666, specular: 0x111111, shininess: 20 } ), 
-                    'pieces':new THREE.MeshPhongMaterial( { color: 0x449944, specular: 0x111111, shininess: 300 } ) }
+const MATERIALS = new Map([
+                    [LAYERS.Map, new THREE.MeshPhongMaterial( {
+                        color:          0x666666, 
+                        specular:       0x111111, 
+                        shininess:      20, 
+                        side:           THREE.FrontSide 
+                        } )], 
+                    [LAYERS.Pieces, new THREE.MeshStandardMaterial({
+                        color:          0x449944, 
+                        specular:       0x111111, 
+                        shininess:      10 
+                        } )]
+                    ]);
 
-const loaders = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
+const EFFECTS = {
+
+                        focus:      350,
+                        aperture:	0.00003,
+                        maxblur:	90,
+    
+                    };
+
+const DECALS = new Map([
+    [SPLATS.Fluid, new THREE.MeshPhongMaterial( {specular: 0x111111, shininess: 100} )],
+    [SPLATS.Gel, new THREE.MeshPhongMaterial( {specular: 0x111111, shininess: 300} )],
+]);
+
+//const LOADERS = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
+
+const SCALE = 25; // mm to in
 
 // Quarternions
 // w	x	y	z	Description
@@ -31,60 +66,134 @@ const loaders = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
 // sqrt(0.5)	0	0	-sqrt(0.5)	-90° rotation around Z axis
 
 function oneInchGrid(){
-    var grid = new THREE.GridHelper( 2500, 100, 0xFFFFFF, 0x5555FF );
+    var grid = new THREE.GridHelper( SCALE * 100, 100, 0xAAAAFF, 0xAAAAFF );
     grid.material.opacity = 0.5;
     grid.material.transparent = true;
     return grid;
 }
 
-function loadMesh(scene, material, position, quaternion, mesh_callback){
-    return (geometry) => {
-        var mesh = new THREE.Mesh( geometry, material );
-        var {x, y, z} = position;
-        mesh.position.set(x, y, z);
-        var {i, j, k, w} = quaternion;
-        mesh.quaternion.set(i, j, k, w);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-
-        scene.scene.add(mesh);
-        mesh_callback(mesh);
-    }
+function snapToGrid(position){
+    var {x, y, z} = position;
+    x = x - (x % SCALE) + (SCALE / 2);
+    z = z - (z % SCALE) + (SCALE / 2);
+    return {x:x, y:y, z:z};
 }
+
+function sum(pos1, pos2){
+    // var {x1, y1, z1} = pos1;
+    // var {x2, y2, z2} = pos2;
+    // return {x:x1+x2, y:y1+y2, z:z1+z2};
+    var x = pos1.x + pos2.x;
+    var y = pos1.y + pos2.y;
+    var z = pos1.z + pos2.z;
+    return {x:x, y:y, z:z};
+}
+
 
 export default class Scene {
 
     constructor(model, world){
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 3000 );
-        //this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
-        this.camera.setFocalLength(12);
         
-        this.renderer = new THREE.WebGLRenderer();
         this.model = model;
         this.world = world;
+
+        //this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 3000 );
+        this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
+        this.camera.setFocalLength(18);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        var controls = new OrbitControls(this.camera, this.renderer.domElement);
+        controls.enableDamping = true;
+        controls.maxPolarAngle = (TAU / 4 ) - .1;
+        controls.minPolarAngle = TAU / 16;
+        controls.minDistance = 75;
+        controls.maxDistance = 350;
+
+        
+
+        this.newScene();
+        
+        
+
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_corner.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-30, y:0, z:0},
+                rotation:{i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)},
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Pieces,
+                id:2,
+                ref:'./sample_meshes/henfeather.stl',
+                format:'stl',
+                snap_offset:{x:0, y:5, z:0},
+                position:{x:0, y:0, z:0},
+                rotation:{i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)},
+            }
+        })
+
+        var renderPass = new RenderPass( this.scene, this.camera );
+
+        this.bokehPass = new BokehPass( this.scene, this.camera, EFFECTS);
+        this.bokehPass.setSize(window.innerWidth, window.innerHeight);
+
+        var composer = new EffectComposer( this.renderer );
+
+        composer.addPass( renderPass );
+        composer.addPass( this.bokehPass );
+
+        window.addEventListener( 'resize', () => this.onWindowResize(), false );
+        window.addEventListener( 'scoll', () => this.onScroll(), false)
+        
+        var _this = this;
+
+        var animate = function() {
+
+            _this.world.step(2);
+
+            _this.contents.forEach((tuple) => {
+                var [body, mesh] = tuple;
+                mesh.position.copy(body.position);
+                mesh.quaternion.copy(body.quaternion);
+            });
+
+            requestAnimationFrame( animate );
+
+            controls.update();
+
+            composer.render(_this.scene, _this.camera);
+        }
+
+        animate();
+
+    }
+
+    newScene(){
+
+        if (this.scene){
+            this.scene.dispose();
+        }
+
+        this.scene = new THREE.Scene();
 
         this.contents = [];
 
         // initalize scene
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        
         this.scene.add(this.camera)
 
-        this.scene.background = new THREE.Color( 0x000000 );
-        this.scene.fog = new THREE.Fog( 0xa0a0a0, 20, 1000 );
+        this.scene.background = new THREE.Color( HORIZON );
+        this.scene.fog = new THREE.Fog( HORIZON, 100, 1000 );
         
-        this.camera.position.set( 0, 50, 75 );
+        this.camera.position.set( -50, 50, -15 );
         this.camera.rotateX(-.5);
 
-
-        //initialize world
-        var ground = new C.Body({
-            mass: 0,
-            shape: new C.Box(new C.Vec3(50, 0.1, 50)),
-            position: new C.Vec3(0, 0, 0)
-        })
-
-        // this.world.addBody(ground);
 
         var hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 200, 0 );
@@ -93,13 +202,9 @@ export default class Scene {
         var directionalLight = new THREE.DirectionalLight( 0xffffff );
         directionalLight.position.set( 0, 200, -200 );
         directionalLight.castShadow = true;
-        // directionalLight.shadow.camera.top = 180;
-        // directionalLight.shadow.camera.bottom = - 100;
-        // directionalLight.shadow.camera.left = - 120;
-        // directionalLight.shadow.camera.right = 120;
         this.scene.add( directionalLight );
 
-        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x0000000, depthWrite: false } ) );
+        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 3000, 3000 ), new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: false } ) );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
@@ -107,83 +212,57 @@ export default class Scene {
         
         this.scene.add( oneInchGrid() );
 
-        //this.scene.add( cube );
-
-        
-
-        var renderer = this.renderer;
-        var scene = this.scene;
-        var camera = this.camera;
-        var contents = this.contents;
-        //var world = this.world;
-
-        var controls = new OrbitControls(camera, renderer.domElement);
-        controls.maxPolarAngle = (TAU / 4 ) - .1;
-        controls.minPolarAngle = TAU / 16;
-        controls.minDistance = 10;
-        controls.maxDistance = 250;
-
-        var animate = function() {
-
-            world.step(2);
-
-            contents.forEach((tuple) => {
-                var [body, mesh] = tuple;
-                mesh.position.copy(body.position);
-                mesh.quaternion.copy(body.quaternion);
-            });
-
-            requestAnimationFrame( animate );
-            //cube.rotation.x += 0.01;
-            //cube.rotation.y += 0.01;
-
-            renderer.render(scene, camera);
-            //camera.renderCinematic(scene, renderer);
-        }
-
-        loaders['stl'].load('./sample_meshes/henfeather.stl', 
-                            loadMesh(this, materials['pieces'], {x:-12, y:10, z:12}, {i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)}),
-                            function(e) {console.info(e)},
-                            function(e) {console.error(e)});
-        loaders['stl'].load('./sample_meshes/stone_wall.stl',
-                            loadMesh(this, materials['map'], {x:-25, y:0, z:25}, {i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)}),
-                            function(e) {console.info(e)},
-                            function(e) {console.error(e)});
-
-        animate();
-
     }
 
     loadMesh(event){
-        // loaders[event.mesh.mesh_format].load(event.mesh.ref,
-        //                                      loadMesh(this, event.mesh.position, event.mesh.rotation),
-        //                                      function(e) {console.info(e)},
-        //                                      function(e) {console.error(e)}
-        //                                      );
         this.model.getGeometry(
-            loadMesh(this, 
-                     materials[event.mesh.layer], 
-                     event.mesh.position, 
-                     event.mesh.rotation,
-                     (mesh) => {
-                         mesh.id = event.mesh.id;
-                         mesh.layer = event.mesh.layer;
-                     }),
+            (geometry) => {
+                var mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer));
+                mesh.layer = event.mesh.layer;
+                //mesh.model_id = event.mesh.id;
+                var pos = sum(event.mesh.snap_offset, snapToGrid(event.mesh.position));
+                var {x, y, z} = pos;
+                mesh.position.set(x, y, z);
+                var {i, j, k, w} = event.mesh.rotation;
+                mesh.quaternion.set(i, j, k, w);
+                switch(mesh.layer){
+                    case LAYERS.Map:
+
+                        break;
+
+                    case LAYERS.Pieces:
+
+                        break;
+
+                    case LAYERS.Hologram:
+
+                        break;
+
+                    case LAYERS.Toybox:
+
+                        break;
+
+                    default:
+
+                        break;
+                }
+                this.scene.add(mesh);
+            },
             event
         );
     }
 
-    async addEvent(event){
+    addEvent(event){
         switch(event.type) {
 
             case EVENTS.Initialize:
-
+                this.newScene();
                 break;
 
             case EVENTS.AddItem:
                 // create a mesh object
                 // put it in the scene
-                //this.loadMesh(event);
+                this.loadMesh(event);
 
                 //make a body
                 var body = new C.Body({
@@ -205,4 +284,18 @@ export default class Scene {
 
         }
     }
+
+    onScroll(){
+        this.bokehPass.setFocalLength( this.camera.zoom );
+    }
+
+    onWindowResize() {
+
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
 }
