@@ -26,20 +26,22 @@ const MATERIALS = new Map([
                         color:          0x666666, 
                         specular:       0x111111, 
                         shininess:      20, 
-                        side:           THREE.FrontSide 
+                        shadowSide:     THREE.FrontSide 
                         } )], 
-                    [LAYERS.Pieces, new THREE.MeshStandardMaterial({
+                    [LAYERS.Pieces, new THREE.MeshPhongMaterial({
                         color:          0x449944, 
                         specular:       0x111111, 
-                        shininess:      10 
+                        shininess:      10,
+                        shadowSide:     THREE.FrontSide
                         } )]
                     ]);
 
 const EFFECTS = {
 
-                        focus:      350,
+                        focus:      90,
                         aperture:	0.00003,
                         maxblur:	90,
+                        fstop:      2.6,
     
                     };
 
@@ -64,6 +66,11 @@ const SCALE = 25; // mm to in
 // sqrt(0.5)	-sqrt(0.5)	0	0	-90° rotation around X axis
 // sqrt(0.5)	0	-sqrt(0.5)	0	-90° rotation around Y axis
 // sqrt(0.5)	0	0	-sqrt(0.5)	-90° rotation around Z axis
+
+const NORTH = {i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)};
+const EAST = {i:-0.5, j:-0.5, k:-0.5, w:0.5};
+const SOUTH = {i:0, j:Math.sqrt(0.5), k:Math.sqrt(0.5), w:0};
+const WEST = {i:-0.5, j:0.5, k:0.5, w:0.5};
 
 function oneInchGrid(){
     var grid = new THREE.GridHelper( SCALE * 100, 100, 0xAAAAFF, 0xAAAAFF );
@@ -93,6 +100,8 @@ function sum(pos1, pos2){
 export default class Scene {
 
     constructor(model, world){
+
+        var _this = this;
         
         this.model = model;
         this.world = world;
@@ -104,10 +113,11 @@ export default class Scene {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
         var controls = new OrbitControls(this.camera, this.renderer.domElement);
         controls.enableDamping = true;
-        controls.maxPolarAngle = (TAU / 4 ) - .1;
-        controls.minPolarAngle = TAU / 16;
+        controls.maxPolarAngle = (TAU / 4 );
+        controls.minPolarAngle = (TAU / 32);
         controls.minDistance = 75;
         controls.maxDistance = 350;
+        controls.target = new THREE.Vector3(0, 20, 0);
 
         
 
@@ -115,17 +125,7 @@ export default class Scene {
         
         
 
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_corner.stl',
-                format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:-30, y:0, z:0},
-                rotation:{i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)},
-            }
-        });
+        
         this.loadMesh({
             mesh:{
                 layer:LAYERS.Pieces,
@@ -134,26 +134,162 @@ export default class Scene {
                 format:'stl',
                 snap_offset:{x:0, y:5, z:0},
                 position:{x:0, y:0, z:0},
-                rotation:{i:-Math.sqrt(0.5), j:0, k:0, w:Math.sqrt(0.5)},
+                rotation:NORTH,
             }
-        })
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_corner.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-30, y:0, z:0},
+                rotation:NORTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_wall.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-75, y:0, z:0},
+                rotation:NORTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_wall.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-125, y:0, z:0},
+                rotation:NORTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_corner.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-195, y:0, z:-50},
+                rotation:EAST,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_wall.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-195, y:0, z:-120},
+                rotation:EAST,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_corner.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-145, y:0, z:-170},
+                rotation:SOUTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_wall.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-95, y:0, z:-170},
+                rotation:SOUTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_wall.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-45, y:0, z:-170},
+                rotation:SOUTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_corner.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:26, y:0, z:-120},
+                rotation:WEST,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_wall.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:26, y:0, z:-55},
+                rotation:WEST,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_floor.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-75, y:0, z:-55},
+                rotation:NORTH,
+            }
+        });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Map,
+                id:1,
+                ref:'./sample_meshes/stone_floor.stl',
+                format:'stl',
+                snap_offset:{x:-12.5, y:-6, z:12.5},
+                position:{x:-125, y:0, z:-55},
+                rotation:NORTH,
+            }
+        });
 
         var renderPass = new RenderPass( this.scene, this.camera );
 
-        this.bokehPass = new BokehPass( this.scene, this.camera, EFFECTS);
-        this.bokehPass.setSize(window.innerWidth, window.innerHeight);
+        var bokehPass = new BokehPass( this.scene, this.camera, EFFECTS);
+        bokehPass.setSize(window.innerWidth, window.innerHeight);
 
         var composer = new EffectComposer( this.renderer );
 
         composer.addPass( renderPass );
-        composer.addPass( this.bokehPass );
+        composer.addPass( bokehPass );
 
         window.addEventListener( 'resize', () => this.onWindowResize(), false );
-        window.addEventListener( 'scoll', () => this.onScroll(), false)
+        // window.addEventListener( 'scoll', () => {
+        //     bokehPass.setFocalLength = controls.object.position.distanceTo(controls.target);
+        // }, false)
         
-        var _this = this;
+        
 
         var animate = function() {
+
+            
 
             _this.world.step(2);
 
@@ -163,11 +299,20 @@ export default class Scene {
                 mesh.quaternion.copy(body.quaternion);
             });
 
-            requestAnimationFrame( animate );
+            bokehPass.uniforms['focus'].value = controls.object.position.distanceTo(controls.target);
+            //bokehPass.uniforms['focus'] = 350;
+            //bokehPass.uniforms['focus'] += 1;
+
+            
 
             controls.update();
 
+
+            requestAnimationFrame( animate );
             composer.render(_this.scene, _this.camera);
+            
+
+
         }
 
         animate();
@@ -217,7 +362,7 @@ export default class Scene {
     loadMesh(event){
         this.model.getGeometry(
             (geometry) => {
-                var mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer));
+                var mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
                 mesh.layer = event.mesh.layer;
                 //mesh.model_id = event.mesh.id;
                 var pos = sum(event.mesh.snap_offset, snapToGrid(event.mesh.position));
@@ -227,19 +372,19 @@ export default class Scene {
                 mesh.quaternion.set(i, j, k, w);
                 switch(mesh.layer){
                     case LAYERS.Map:
-
+                        // Map layer stuff
                         break;
 
                     case LAYERS.Pieces:
-
+                        // Pieces stuff
                         break;
 
                     case LAYERS.Hologram:
-
+                        // meshes that noclip
                         break;
 
                     case LAYERS.Toybox:
-
+                        // meshes that load but don't get added to the main scene
                         break;
 
                     default:
@@ -285,15 +430,14 @@ export default class Scene {
         }
     }
 
-    onScroll(){
-        this.bokehPass.setFocalLength( this.camera.zoom );
-    }
+    // onScroll(){
+    //     this.bokehPass.uniforms["focus"] = this.camera.uniforms['zoom'];
+    // }
 
     onWindowResize() {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-
         this.renderer.setSize( window.innerWidth, window.innerHeight );
 
     }
