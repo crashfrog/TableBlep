@@ -9,6 +9,7 @@ import SPLATS from './splatTypes.js';
 // import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 // import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
 //import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
 import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -74,7 +75,7 @@ const WEST = {i:-0.5, j:0.5, k:0.5, w:0.5};
 
 function oneInchGrid(){
     var grid = new THREE.GridHelper( SCALE * 100, 100, 0xAAAAFF, 0xAAAAFF );
-    grid.material.opacity = 0.5;
+    grid.material.opacity = 1;
     grid.material.transparent = true;
     return grid;
 }
@@ -111,6 +112,11 @@ export default class Scene {
         this.camera.setFocalLength(18);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.shadowMap.enabled = true;
+		this.renderer.shadowMap.type = THREE.PCFShadowMap;
+
+        //orbit controls
+
         var controls = new OrbitControls(this.camera, this.renderer.domElement);
         controls.enableDamping = true;
         controls.maxPolarAngle = (TAU / 4 );
@@ -122,6 +128,40 @@ export default class Scene {
         
 
         this.newScene();
+
+        //drag controls
+
+        var dcontrols = new DragControls( this.pieces, this.camera, this.renderer.domElement );
+        dcontrols.enabled = true;
+        dcontrols.addEventListener( 'hoveron', function ( event ) {
+
+            event.object.material.emissive.set( 0x333333 );
+        
+        } );
+        dcontrols.addEventListener( 'hoveroff', function ( event ) {
+
+            event.object.material.emissive.set( 0x000000 );
+        
+        } );
+        dcontrols.addEventListener('dragstart', (event) => {
+            controls.enabled = false;
+            _this.grid.visible = true;
+        });
+        dcontrols.addEventListener('drag', (event) => {
+            event.object.position.y = 15;
+        });
+        dcontrols.addEventListener('dragend', (event) => {
+            var pos = snapToGrid({
+                x:event.object.position.x,
+                y:event.object.position.y,
+                z:event.object.position.z
+            });
+            event.object.position.x = pos.x;
+            event.object.position.y = 5;
+            event.object.position.z = pos.z;
+            controls.enabled = true;
+            _this.grid.visible = false;
+        });
         
         
 
@@ -137,6 +177,28 @@ export default class Scene {
                 rotation:NORTH,
             }
         });
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Pieces,
+                id:2,
+                ref:'./sample_meshes/kork.stl',
+                format:'stl',
+                snap_offset:{x:0, y:5, z:0},
+                position:{x:-25, y:0, z:-50},
+                rotation:EAST,
+            }
+        })
+        this.loadMesh({
+            mesh:{
+                layer:LAYERS.Pieces,
+                id:2,
+                ref:'./sample_meshes/carrion_crawler.stl',
+                format:'stl',
+                snap_offset:{x:25, y:5, z:25},
+                position:{x:-175, y:0, z:-75},
+                rotation:WEST,
+            }
+        })
         this.loadMesh({
             mesh:{
                 layer:LAYERS.Map,
@@ -284,7 +346,7 @@ export default class Scene {
         // window.addEventListener( 'scoll', () => {
         //     bokehPass.setFocalLength = controls.object.position.distanceTo(controls.target);
         // }, false)
-        
+
         
 
         var animate = function() {
@@ -293,11 +355,11 @@ export default class Scene {
 
             _this.world.step(2);
 
-            _this.contents.forEach((tuple) => {
-                var [body, mesh] = tuple;
-                mesh.position.copy(body.position);
-                mesh.quaternion.copy(body.quaternion);
-            });
+            // _this.contents.forEach((tuple) => {
+            //     var [body, mesh] = tuple;
+            //     mesh.position.copy(body.position);
+            //     mesh.quaternion.copy(body.quaternion);
+            // });
 
             bokehPass.uniforms['focus'].value = controls.object.position.distanceTo(controls.target);
             //bokehPass.uniforms['focus'] = 350;
@@ -328,6 +390,7 @@ export default class Scene {
         this.scene = new THREE.Scene();
 
         this.contents = [];
+        this.pieces = [];
 
         // initalize scene
         
@@ -355,7 +418,13 @@ export default class Scene {
         this.scene.add( ground );
 
         
-        this.scene.add( oneInchGrid() );
+        this.scene.add( oneInchGrid() ); //regular ground grid
+
+        this.grid = oneInchGrid();
+        this.grid.material.color.set(0x00ff00);
+        this.grid.position.y = 14;
+        this.grid.visible = false;
+        this.scene.add(this.grid);
 
     }
 
@@ -377,6 +446,7 @@ export default class Scene {
 
                     case LAYERS.Pieces:
                         // Pieces stuff
+                        this.pieces.push(mesh);
                         break;
 
                     case LAYERS.Hologram:
