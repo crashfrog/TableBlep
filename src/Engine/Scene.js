@@ -27,13 +27,15 @@ const MATERIALS = new Map([
                         color:          0x666666, 
                         specular:       0x111111, 
                         shininess:      20, 
-                        shadowSide:     THREE.FrontSide 
+                        shadowSide:     THREE.FrontSide,
+                        flatShading:    true, 
                         } )], 
                     [LAYERS.Pieces, new THREE.MeshPhongMaterial({
                         color:          0x449944, 
                         specular:       0x111111, 
                         shininess:      10,
-                        shadowSide:     THREE.FrontSide
+                        shadowSide:     THREE.FrontSide,
+                        flatShading:    true,
                         } )]
                     ]);
 
