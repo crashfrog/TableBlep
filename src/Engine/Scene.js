@@ -10,7 +10,7 @@ import SPLATS from './splatTypes.js';
 // import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
-//import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
+import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
 import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -30,12 +30,16 @@ const MATERIALS = new Map([
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true, 
                         } )], 
-                    [LAYERS.Pieces, new THREE.MeshPhongMaterial({
-                        color:          0x449944, 
-                        specular:       0x111111, 
-                        shininess:      10,
+                    [LAYERS.Pieces, new THREE.MeshPhysicalMaterial({
+                        color:          0x7a4719, 
+                        specular:       0x333333, 
+                        shininess:      300,
+                        roughness:      0.6,
+                        metalness:      0.8,
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true,
+                        minFilter:      THREE.NearestFilter,
+                        magFilter:      THREE.NearestFilter,
                         } )]
                     ]);
 
@@ -338,6 +342,8 @@ export default class Scene {
 
         var bokehPass = new BokehPass( this.scene, this.camera, EFFECTS);
         bokehPass.setSize(window.innerWidth, window.innerHeight);
+
+        var outline = new OutlineEffect( this.renderer );
 
         var composer = new EffectComposer( this.renderer );
 
