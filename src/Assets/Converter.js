@@ -15,12 +15,12 @@ export function convert(fileStream){
     group = new THREE.Group();
 
 
-    var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+    var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 250, 250 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
     ground.rotation.x = - Math.PI / 2;
     ground.receiveShadow = true;
     scene.add( ground );
 
-    var grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
+    var grid = new THREE.GridHelper( 250, 25, 0x000000, 0x000000 );
     grid.material.opacity = 0.2;
     grid.material.transparent = true;
     scene.add( grid );

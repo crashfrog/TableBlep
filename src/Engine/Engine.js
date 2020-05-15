@@ -1,16 +1,17 @@
+import Model from './Model.js';
 import * as THREE from 'three';
 //import * as MODEL from 'model';
 import C from 'cannon';
-import EVENTS from './eventTypes.js';
-import LAYERS from './layerTypes.js';
-import SPLATS from './splatTypes.js';
+import EVENTS from '../Enums/eventTypes.js';
+import LAYERS from '../Enums/layerTypes.js';
+import SPLATS from '../Enums/splatTypes.js';
 //import { threeToCannon } from 'three-to-cannon';
 
 // import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 // import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
-import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
+//import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
 import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -30,7 +31,7 @@ const MATERIALS = new Map([
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true, 
                         } )], 
-                    [LAYERS.Pieces, new THREE.MeshPhysicalMaterial({
+                    [LAYERS.Pieces, new THREE.MeshStandardMaterial({
                         color:          0x7a4719, 
                         specular:       0x333333, 
                         shininess:      300,
@@ -38,8 +39,6 @@ const MATERIALS = new Map([
                         metalness:      0.8,
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true,
-                        minFilter:      THREE.NearestFilter,
-                        magFilter:      THREE.NearestFilter,
                         } )]
                     ]);
 
@@ -103,15 +102,21 @@ function sum(pos1, pos2){
     return {x:x, y:y, z:z};
 }
 
+function switchCameraToOverheadView(camera, position){
+    camera.rotation.set(0,0,0);
+    camera.position.set(position.x, 400, position.z);
+    camera.quaternion.set(0, 0, -Math.sqrt(0.5), Math.sqrt(0.5));
+}
 
-export default class Scene {
 
-    constructor(model, world){
+class Engine {
+
+    constructor(){
 
         var _this = this;
         
-        this.model = model;
-        this.world = world;
+        // this.model = model;
+        // this.world = world;
 
         //this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 3000 );
         this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
@@ -124,12 +129,12 @@ export default class Scene {
         //orbit controls
 
         var controls = new OrbitControls(this.camera, this.renderer.domElement);
-        controls.enableDamping = true;
+        //controls.enableDamping = true;
         controls.maxPolarAngle = (TAU / 4 );
         controls.minPolarAngle = (TAU / 32);
         controls.minDistance = 75;
         controls.maxDistance = 350;
-        controls.target = new THREE.Vector3(0, 20, 0);
+        controls.target = new THREE.Vector3(0, -20, 0);
 
         
 
@@ -152,11 +157,15 @@ export default class Scene {
         dcontrols.addEventListener('dragstart', (event) => {
             controls.enabled = false;
             _this.grid.visible = true;
+            _this.lastCameraAngle = _this.camera.rotation.clone();
+            _this.lastCameraPos = _this.camera.position.clone();
+            switchCameraToOverheadView(_this.camera, event.object.position);
         });
         dcontrols.addEventListener('drag', (event) => {
             event.object.position.y = 15;
         });
         dcontrols.addEventListener('dragend', (event) => {
+            event.object.material.emissive.set( 0x000000 );
             var pos = snapToGrid({
                 x:event.object.position.x,
                 y:event.object.position.y,
@@ -165,8 +174,14 @@ export default class Scene {
             event.object.position.x = pos.x;
             event.object.position.y = 5;
             event.object.position.z = pos.z;
-            controls.enabled = true;
             _this.grid.visible = false;
+            // _this.camera.matrix.copy(_this.lastCameraView);
+            _this.camera.rotation.copy(_this.lastCameraAngle);
+            _this.camera.position.copy(_this.lastCameraPos.add(event.object.position));
+            controls.enabled = true;
+
+            Model.moveMesh(event.object, {});
+
         });
         
         
@@ -343,25 +358,18 @@ export default class Scene {
         var bokehPass = new BokehPass( this.scene, this.camera, EFFECTS);
         bokehPass.setSize(window.innerWidth, window.innerHeight);
 
-        var outline = new OutlineEffect( this.renderer );
-
         var composer = new EffectComposer( this.renderer );
 
         composer.addPass( renderPass );
         composer.addPass( bokehPass );
 
         window.addEventListener( 'resize', () => this.onWindowResize(), false );
-        // window.addEventListener( 'scoll', () => {
-        //     bokehPass.setFocalLength = controls.object.position.distanceTo(controls.target);
-        // }, false)
-
-        
 
         var animate = function() {
 
             
 
-            _this.world.step(2);
+            //_this.world.step(2);
 
             // _this.contents.forEach((tuple) => {
             //     var [body, mesh] = tuple;
@@ -407,7 +415,7 @@ export default class Scene {
         this.scene.background = new THREE.Color( HORIZON );
         this.scene.fog = new THREE.Fog( HORIZON, 100, 1000 );
         
-        this.camera.position.set( -50, 50, -15 );
+        this.camera.position.set( -80, 60, -80 );
         this.camera.rotateX(-.5);
 
 
@@ -420,7 +428,7 @@ export default class Scene {
         directionalLight.castShadow = true;
         this.scene.add( directionalLight );
 
-        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 3000, 3000 ), new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: false } ) );
+        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 3000, 3000 ), new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: false, flatShading: true } ) );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
@@ -437,11 +445,12 @@ export default class Scene {
     }
 
     loadMesh(event){
-        this.model.getGeometry(
+        Model.getGeometry(
             (geometry) => {
                 var mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
+                
                 mesh.layer = event.mesh.layer;
-                //mesh.model_id = event.mesh.id;
+                mesh.mesh_id = event.mesh.id;
                 var pos = sum(event.mesh.snap_offset, snapToGrid(event.mesh.position));
                 var {x, y, z} = pos;
                 mesh.position.set(x, y, z);
@@ -470,9 +479,15 @@ export default class Scene {
                         break;
                 }
                 this.scene.add(mesh);
+                //mesh.matrixAutoUpdate = false; //maybe?
             },
             event
         );
+    }
+
+    optimizedBulkLoad(events){
+        var addsByMeshRef = new Map();
+
     }
 
     addEvent(event){
@@ -521,3 +536,5 @@ export default class Scene {
     }
 
 }
+
+export default Engine = new Engine();

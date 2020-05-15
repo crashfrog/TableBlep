@@ -1,7 +1,10 @@
+//import Engine from './Engine.js';
+
 import {Client} from '@textile/threads-client';
-import EVENTS from './eventTypes.js';
-import LAYERS from './layerTypes.js';
-import SPLATS from './splatTypes.js';
+import EVENTS from '../Enums/eventTypes.js';
+import LAYERS from '../Enums/layerTypes.js';
+import SPLATS from '../Enums/splatTypes.js';
+import SNAPS_TO from '../Enums/snapTypes.js';
 
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -10,19 +13,28 @@ import uuid from 'uuid/v4';
 
 const loaders = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
 
-export default class Model {
+class Model {
 
-    constructor(view, scene, tx_thread){
-        this.scene = scene; // the three.js scene and its physics
-        this.tx_thread = tx_thread;
-        this.view = view; // the react UI with the chat window
+    constructor(){
+        // this.scene = scene; // the three.js scene and its physics
+        // this.tx_thread = tx_thread;
+        // this.view = view; // the react UI with the chat window
 
         // a series of maps to cache mesh data
         // this.obj_by_mesh = new Map();
-        this.mesh_by_id = new Map();
+        // this.mesh_by_id = new Map();
         // this.owner_by_obj = new Map();
-        this.geometry_cache = new Map();
+        this.geometryCache = new Map();
+        this.curr_event = {};
 
+
+    }
+
+    // owns(user_id, mesh_id){
+    //     return this.owner_by_obj.get(mesh_id) === user_id;
+    // }
+
+    startClient(){
         //init the client
         const key_prefix = "blep"
         const name = "Some name";
@@ -34,35 +46,31 @@ export default class Model {
             //sharing: Thread.Sharing.SHARED,
             schema: { id: '', json: JSON.stringify(event_schema)},
             force: false,
-            whitelist: []
+            whitelist: [],
         };
-
-        this.curr_event = {};
-
-
     }
-
-    // owns(user_id, mesh_id){
-    //     return this.owner_by_obj.get(mesh_id) === user_id;
-    // }
 
     async getNewEvents(){
         return [];
     }
 
     getGeometry(geometry_callback, event){
-        if (this.geometry_cache.has(event.mesh.ref)){
-            geometry_callback(this.geometry_cache.get(event.mesh.ref));
+        if (this.geometryCache.has(event.mesh.ref)){
+            console.info("Found " + event.mesh.ref);
+            var geometry = this.geometryCache.get(event.mesh.ref);
+            return geometry_callback(geometry);
         } else {
             loaders[event.mesh.format].load(
                 event.mesh.ref,
                 (geometry) => {
-                    this.geometry_cache.set(event.mesh.ref, geometry);
+                    console.info("Loaded " + event.mesh.ref);
+                    this.geometryCache.set(event.mesh.ref, geometry);
+                    //console.info(this.geometry_cache);
                     return geometry_callback(geometry);
                 },
                 function(e) {console.info(e)},
                 function(e) {console.error(e)}
-            )
+            );
         }
     }
 
@@ -101,7 +109,7 @@ export default class Model {
     }
 
     injectEvent(event){
-        // TODO
+        console.info(event);
     }
 
     addMessage(message, metadata={}){
@@ -122,8 +130,17 @@ export default class Model {
                 ref:mesh_ref,
                 format:mesh_format,
                 snap_offset:snap_offset,
-                position:position,
-                rotation:rotation,
+                position:{
+                    x:position.x,
+                    y:position.y,
+                    z:position.z
+                },
+                rotation:{
+                    i:rotation.x,
+                    j:rotation.y,
+                    k:rotation.z,
+                    w:rotation.w
+                },
                 layer:layer
             },
             owner:this.view.getOwnerInfo(),
@@ -142,12 +159,21 @@ export default class Model {
         this.injectEvent({
             type:EVENTS.MoveItem,
             mesh:{
-                id:mesh.id,
-                position:mesh.position,
-                rotation:mesh.quaternion,
+                id:mesh.mesh_id,
+                position:{
+                    x:mesh.position.x,
+                    y:mesh.position.y,
+                    z:mesh.position.z
+                },
+                rotation:{
+                    i:mesh.quaternion.x,
+                    j:mesh.quaternion.y,
+                    k:mesh.quaternion.z,
+                    w:mesh.quaternion.w
+                },
                 layer:mesh.layer
             },
-            owner:this.view.getOwnerInfo(),
+            //owner:this.view.getOwnerInfo(),
             metadata:metadata
         });
     }
@@ -170,8 +196,9 @@ export default class Model {
             }
         })
     }
-
 }
+
+export default Model = new Model();
 
 const point_schema = {
     "description": "xyz triplet",
@@ -238,15 +265,21 @@ const mesh_schema = {
             "type": "string",
             "enum": ["stl", "gltf"]
         },
-        "snap_offset": {
-            "description": "snap-to-grid offset point",
+        "snapsTo": {
+            "description": "snap-to-grid behavior - square center or intersection",
+            "type": "string",
+            "enum":[SNAPS_TO.Center, SNAPS_TO.Intersection]
+        },
+        "snapOffset": {
+            "description": "offset snap point from origin of mesh",
             "type": {"$ref":"#/definitions/triplet"}
         },
         "position": {
+            "description": "XYZ location in space",
             "type": {"$ref":"#/definitions/triplet"}
         },
         "rotation": {
-            "description": "Rotational quaternion",
+            "description": "Rotational quaternion as IJKW",
             "type": {"$ref":"#/definitions/quaternion"}
         },
         "layer": {
