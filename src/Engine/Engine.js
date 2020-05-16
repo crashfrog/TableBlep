@@ -129,7 +129,7 @@ class Engine {
         //orbit controls
 
         var controls = new OrbitControls(this.camera, this.renderer.domElement);
-        //controls.enableDamping = true;
+        controls.enableDamping = true;
         controls.maxPolarAngle = (TAU / 4 );
         controls.minPolarAngle = (TAU / 32);
         controls.minDistance = 75;
@@ -184,7 +184,7 @@ class Engine {
 
         });
         
-        
+        // sample map and pieces
 
         
         this.loadMesh({
@@ -353,6 +353,8 @@ class Engine {
             }
         });
 
+        // FOD/Bokeh effect
+
         var renderPass = new RenderPass( this.scene, this.camera );
 
         var bokehPass = new BokehPass( this.scene, this.camera, EFFECTS);
@@ -363,34 +365,36 @@ class Engine {
         composer.addPass( renderPass );
         composer.addPass( bokehPass );
 
+        // Window resize handler
+
         window.addEventListener( 'resize', () => this.onWindowResize(), false );
 
-        var animate = function() {
+        // Register to receive model events
 
-            
+        Model.addEventListener( EVENTS.Initalize, (event) => {
+            _this.newScene();
+        }, false );
 
-            //_this.world.step(2);
+        Model.addEventListener( EVENTS.AddItem, (event) => {
+            _this.loadMesh(event);
+        }, false );
 
-            // _this.contents.forEach((tuple) => {
-            //     var [body, mesh] = tuple;
-            //     mesh.position.copy(body.position);
-            //     mesh.quaternion.copy(body.quaternion);
-            // });
+        Model.addEventListener( EVENTS.MoveItem, (event) => {
 
+        }, false );
+
+        Model.addEventListener( EVENTS.RemoveItem, (event) => {
+
+        }, false);
+
+
+        // animate and render scene
+
+        var animate = () => {
             bokehPass.uniforms['focus'].value = controls.object.position.distanceTo(controls.target);
-            //bokehPass.uniforms['focus'] = 350;
-            //bokehPass.uniforms['focus'] += 1;
-
-            
-
             controls.update();
-
-
             requestAnimationFrame( animate );
             composer.render(_this.scene, _this.camera);
-            
-
-
         }
 
         animate();
@@ -490,38 +494,38 @@ class Engine {
 
     }
 
-    addEvent(event){
-        switch(event.type) {
+    // addEvent(event){
+    //     switch(event.type) {
 
-            case EVENTS.Initialize:
-                this.newScene();
-                break;
+    //         case EVENTS.Initialize:
+    //             this.newScene();
+    //             break;
 
-            case EVENTS.AddItem:
-                // create a mesh object
-                // put it in the scene
-                this.loadMesh(event);
+    //         case EVENTS.AddItem:
+    //             // create a mesh object
+    //             // put it in the scene
+    //             this.loadMesh(event);
 
-                //make a body
-                var body = new C.Body({
-                    mass: 1
-                });
+    //             //make a body
+    //             var body = new C.Body({
+    //                 mass: 1
+    //             });
 
-                //add body to world
-                break;
+    //             //add body to world
+    //             break;
             
-            case EVENTS.RemoveItem:
+    //         case EVENTS.RemoveItem:
 
-                break;
+    //             break;
 
-            case EVENTS.MoveItem:
+    //         case EVENTS.MoveItem:
 
-                break;
+    //             break;
 
-            default:
+    //         default:
 
-        }
-    }
+    //     }
+    // }
 
     // onScroll(){
     //     this.bokehPass.uniforms["focus"] = this.camera.uniforms['zoom'];

@@ -13,9 +13,10 @@ import uuid from 'uuid/v4';
 
 const loaders = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
 
-class Model {
+class Model extends EventTarget {
 
     constructor(){
+        super();
         // this.scene = scene; // the three.js scene and its physics
         // this.tx_thread = tx_thread;
         // this.view = view; // the react UI with the chat window
@@ -26,8 +27,6 @@ class Model {
         // this.owner_by_obj = new Map();
         this.geometryCache = new Map();
         this.curr_event = {};
-
-
     }
 
     // owns(user_id, mesh_id){
@@ -102,9 +101,10 @@ class Model {
             //     }
             // }
             // allow the scene and view to process the event
-            this.curr_event = event;
-            await this.scene.addEvent(event); // send event to 3D scene
-            await this.view.addEvent(event); // send event to react view
+            // this.curr_event = event;
+            // await this.scene.addEvent(event); // send event to 3D scene
+            // await this.view.addEvent(event); // send event to react view
+            this.dispatchEvent(new CustomEvent(event.type, event));
         }
     }
 
