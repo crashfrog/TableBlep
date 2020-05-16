@@ -286,6 +286,10 @@ const mesh_schema = {
             "description": "layer mesh is added to",
             "type": "string",
             "enum": [LAYERS.Map, LAYERS.Pieces, LAYERS.Hologram, LAYERS.Toybox]
+        },
+        "headY": {
+            "description": "elevation of eyepoint; used for camera and lighting",
+            "type":"number"
         }
     },
     "required": ['mesh_id']

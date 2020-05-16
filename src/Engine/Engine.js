@@ -5,6 +5,7 @@ import C from 'cannon';
 import EVENTS from '../Enums/eventTypes.js';
 import LAYERS from '../Enums/layerTypes.js';
 import SPLATS from '../Enums/splatTypes.js';
+import SNAPSTO from '../Enums/snapTypes.js';
 //import { threeToCannon } from 'three-to-cannon';
 
 // import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
@@ -16,6 +17,7 @@ import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+import snapsTo from '../Enums/snapTypes.js';
 
 const HORIZON = 0x000000;
 const GROUND = 0x222222;
@@ -59,6 +61,9 @@ const DECALS = new Map([
 //const LOADERS = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
 
 const SCALE = 25; // mm to in
+const PIECE_LAYER_Y = 5;
+const MAP_LAYER_Y = -6;
+const HOLOGRAM_LAYER_Y = 14;
 
 // Quarternions
 // w	x	y	z	Description
@@ -85,11 +90,28 @@ function oneInchGrid(){
     return grid;
 }
 
-function snapToGrid(position){
+function snapToGrid(position, snapOffset, snapTo, layer){
     var {x, y, z} = position;
-    x = x - (x % SCALE) + (SCALE / 2);
-    z = z - (z % SCALE) + (SCALE / 2);
-    return {x:x, y:y, z:z};
+    if (snapTo === SNAPSTO.Center){
+        x -= SCALE / 2;
+        z -= SCALE / 2;
+    }
+    x = Math.round(x / SCALE) * SCALE;
+    z = Math.round(z / SCALE) * SCALE;
+    if (snapTo === SNAPSTO.Center){
+        x += SCALE / 2;
+        z += SCALE / 2;
+    }
+    x += snapOffset.x;
+    z += snapOffset.z;
+    if (layer === LAYERS.Pieces){
+        y = PIECE_LAYER_Y;
+    } else if (layer === LAYERS.Map){
+        y = MAP_LAYER_Y;
+    } else if (layer === LAYERS.Hologram){
+        y = HOLOGRAM_LAYER_Y;
+    }
+    return new THREE.Vector3(x, y, z);
 }
 
 function sum(pos1, pos2){
@@ -103,7 +125,7 @@ function sum(pos1, pos2){
 }
 
 function switchCameraToOverheadView(camera, position){
-    camera.rotation.set(0,0,0);
+    //camera.rotation.set(0,0,0);
     camera.position.set(position.x, 400, position.z);
     camera.quaternion.set(0, 0, -Math.sqrt(0.5), Math.sqrt(0.5));
 }
@@ -156,7 +178,8 @@ class Engine {
         } );
         dcontrols.addEventListener('dragstart', (event) => {
             controls.enabled = false;
-            _this.grid.visible = true;
+            _this.movement_grid.visible = true;
+            _this.static_grid.visible = false;
             _this.lastCameraAngle = _this.camera.rotation.clone();
             _this.lastCameraPos = _this.camera.position.clone();
             switchCameraToOverheadView(_this.camera, event.object.position);
@@ -166,15 +189,17 @@ class Engine {
         });
         dcontrols.addEventListener('dragend', (event) => {
             event.object.material.emissive.set( 0x000000 );
-            var pos = snapToGrid({
-                x:event.object.position.x,
-                y:event.object.position.y,
-                z:event.object.position.z
-            });
-            event.object.position.x = pos.x;
-            event.object.position.y = 5;
-            event.object.position.z = pos.z;
-            _this.grid.visible = false;
+            // var pos = snapToGrid({
+            //     x:event.object.position.x,
+            //     y:event.object.position.y,
+            //     z:event.object.position.z
+            // });
+            // event.object.position.x = pos.x;
+            // event.object.position.y = 5;
+            // event.object.position.z = pos.z;
+            event.object.position.copy(snapToGrid(event.object.position, event.object.snapOffset, event.object.snapTo, event.object.layer))
+            _this.movement_grid.visible = false;
+            _this.static_grid.visible = true;
             // _this.camera.matrix.copy(_this.lastCameraView);
             _this.camera.rotation.copy(_this.lastCameraAngle);
             _this.camera.position.copy(_this.lastCameraPos.add(event.object.position));
@@ -193,8 +218,9 @@ class Engine {
                 id:2,
                 ref:'./sample_meshes/henfeather.stl',
                 format:'stl',
-                snap_offset:{x:0, y:5, z:0},
-                position:{x:0, y:0, z:0},
+                snapOffset:{x:0, y:5, z:0},
+                snapTo:SNAPSTO.Center,
+                position:{x:-25, y:0, z:-25},
                 rotation:NORTH,
             }
         });
@@ -204,7 +230,8 @@ class Engine {
                 id:2,
                 ref:'./sample_meshes/kork.stl',
                 format:'stl',
-                snap_offset:{x:0, y:5, z:0},
+                snapOffset:{x:0, y:5, z:0},
+                snapTo:SNAPSTO.Center,
                 position:{x:-25, y:0, z:-50},
                 rotation:EAST,
             }
@@ -215,7 +242,7 @@ class Engine {
                 id:2,
                 ref:'./sample_meshes/carrion_crawler.stl',
                 format:'stl',
-                snap_offset:{x:25, y:5, z:25},
+                snapOffset:{x:25, y:5, z:25},
                 position:{x:-175, y:0, z:-75},
                 rotation:WEST,
             }
@@ -226,7 +253,7 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_corner.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
+                snapOffset:{x:0, y:0, z:0},
                 position:{x:-30, y:0, z:0},
                 rotation:NORTH,
             }
@@ -237,7 +264,7 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_wall.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
+                snapOffset:{x:0, y:0, z:0},
                 position:{x:-75, y:0, z:0},
                 rotation:NORTH,
             }
@@ -248,7 +275,7 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_wall.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
+                snapOffset:{x:0, y:0, z:0},
                 position:{x:-125, y:0, z:0},
                 rotation:NORTH,
             }
@@ -259,8 +286,8 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_corner.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:-195, y:0, z:-50},
+                snapOffset:{x:0, y:0, z:0},
+                position:{x:-175, y:0, z:-50},
                 rotation:EAST,
             }
         });
@@ -270,8 +297,8 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_wall.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:-195, y:0, z:-120},
+                snapOffset:{x:0, y:0, z:0},
+                position:{x:-175, y:0, z:-100},
                 rotation:EAST,
             }
         });
@@ -281,8 +308,8 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_corner.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:-145, y:0, z:-170},
+                snapOffset:{x:0, y:0, z:0},
+                position:{x:-125, y:0, z:-150},
                 rotation:SOUTH,
             }
         });
@@ -292,8 +319,8 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_wall.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:-95, y:0, z:-170},
+                snapOffset:{x:0, y:0, z:0},
+                position:{x:-75, y:0, z:-150},
                 rotation:SOUTH,
             }
         });
@@ -303,8 +330,8 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_wall.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:-45, y:0, z:-170},
+                snapOffset:{x:0, y:0, z:0},
+                position:{x:-25, y:0, z:-150},
                 rotation:SOUTH,
             }
         });
@@ -314,8 +341,8 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_corner.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
-                position:{x:26, y:0, z:-120},
+                snapOffset:{x:0, y:0, z:0},
+                position:{x:25, y:0, z:-100},
                 rotation:WEST,
             }
         });
@@ -325,7 +352,7 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_wall.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
+                snapOffset:{x:0, y:0, z:0},
                 position:{x:26, y:0, z:-55},
                 rotation:WEST,
             }
@@ -336,7 +363,7 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_floor.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
+                snapOffset:{x:0, y:0, z:0},
                 position:{x:-75, y:0, z:-55},
                 rotation:NORTH,
             }
@@ -347,7 +374,7 @@ class Engine {
                 id:1,
                 ref:'./sample_meshes/stone_floor.stl',
                 format:'stl',
-                snap_offset:{x:-12.5, y:-6, z:12.5},
+                snapOffset:{x:0, y:0, z:0},
                 position:{x:-125, y:0, z:-55},
                 rotation:NORTH,
             }
@@ -437,14 +464,14 @@ class Engine {
         ground.receiveShadow = true;
         this.scene.add( ground );
 
-        
-        this.scene.add( oneInchGrid() ); //regular ground grid
+        this.static_grid = oneInchGrid()
+        this.scene.add( this.static_grid ); //regular ground grid
 
-        this.grid = oneInchGrid();
-        this.grid.material.color.set(0x00ff00);
-        this.grid.position.y = 14;
-        this.grid.visible = false;
-        this.scene.add(this.grid);
+        this.movement_grid = oneInchGrid(); //movement guide grid
+        this.movement_grid.material.color.set(0x00ff00);
+        this.movement_grid.position.y = HOLOGRAM_LAYER_Y;
+        this.movement_grid.visible = false;
+        this.scene.add(this.movement_grid);
 
     }
 
@@ -455,9 +482,12 @@ class Engine {
                 
                 mesh.layer = event.mesh.layer;
                 mesh.mesh_id = event.mesh.id;
-                var pos = sum(event.mesh.snap_offset, snapToGrid(event.mesh.position));
-                var {x, y, z} = pos;
-                mesh.position.set(x, y, z);
+                mesh.snapOffset = event.mesh.snapOffset;
+                mesh.snapTo = event.mesh.snapTo;
+                //var pos = sum(event.mesh.snap_offset, snapToGrid(event.mesh.position));
+                // var {x, y, z} = pos;
+                // mesh.position.set(x, y, z);
+                mesh.position.copy(snapToGrid(event.mesh.position, event.mesh.snapOffset, event.mesh.snapTo, event.mesh.layer));
                 var {i, j, k, w} = event.mesh.rotation;
                 mesh.quaternion.set(i, j, k, w);
                 switch(mesh.layer){
