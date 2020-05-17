@@ -5,14 +5,25 @@ import React, { Component } from "react";
 export default class ChatBox extends Component {
 
     componentDidMount(){
-        Model.addEventListener(EVENTS.AddMessage, () => {
-
+        var _this = this;
+        this.state = {
+            messageList: []
+        };
+        Model.addEventListener(EVENTS.AddMessage, (event) => {
+            _this.setState({
+                messageList: [..._this.state.messageList, event.content]
+              })
         }, false);
     }
 
     render(){
-        return () => {
 
-        }
+        const style = {
+
+        };
+
+        return (
+            <div />
+        );
     }
 }

@@ -29,6 +29,11 @@ class Model extends EventTarget {
         this.curr_event = {};
     }
 
+    dumpCache(){
+        this.geometryCache = new Map();
+        this.curr_event = {};
+    }
+
     // owns(user_id, mesh_id){
     //     return this.owner_by_obj.get(mesh_id) === user_id;
     // }
@@ -53,17 +58,17 @@ class Model extends EventTarget {
         return [];
     }
 
-    getGeometry(geometry_callback, event){
-        if (this.geometryCache.has(event.mesh.ref)){
-            console.info("Found " + event.mesh.ref);
-            var geometry = this.geometryCache.get(event.mesh.ref);
+    getGeometry(geometry_callback, ref, format){
+        if (this.geometryCache.has(ref)){
+            console.info("Found " + ref);
+            var geometry = this.geometryCache.get(ref);
             return geometry_callback(geometry);
         } else {
-            loaders[event.mesh.format].load(
-                event.mesh.ref,
+            loaders[format].load(
+                ref,
                 (geometry) => {
-                    console.info("Loaded " + event.mesh.ref);
-                    this.geometryCache.set(event.mesh.ref, geometry);
+                    console.info("Loaded " + ref);
+                    this.geometryCache.set(ref, geometry);
                     //console.info(this.geometry_cache);
                     return geometry_callback(geometry);
                 },
@@ -75,35 +80,6 @@ class Model extends EventTarget {
 
     async checkForEvents(){
         for (const event of await this.getNewEvents()){
-            // // we only need to update the model during add and remove mesh events
-            // if (event.type === EVENTS.AddItem) { 
-            //     //check if the mesh isn't already loaded
-            //     if (!this.obj_by_mesh.has(event.mesh.id)){
-            //         // get mesh data from IPFS via URI
-            //         let mesh = await this.tx_thread.resolve(event.ref);
-            //         // //add it to the maps
-            //         // this.obj_by_mesh.set(event.mesh.mesh_id, new Set([event.obj_id]));
-            //         // this.mesh_by_id.set(event.mesh.mesh_ref, mesh);
-            //     } else {
-            //         //we already have it, and three.js has optimizations for mesh re-use
-            //         this.obj_by_mesh.get(event.mesh.id).add(event.id);
-            //     }
-            //     // if (event.owner){
-            //     //     // meshes might be "owned" by one of the players,
-            //     //     // we keep track of who owns what
-            //     //     this.owner_by_obj.set(event.owner.id, event.mesh.id);
-            //     // }
-            // } else if (event.type === EVENTS.RemoveItem) {
-            //     const objs = this.obj_by_mesh.get(event.mesh.id);
-            //     objs.delete(event.obj_id);
-            //     if (objs.size === 0){
-            //         this.mesh_by_id.delete(event.mesh.ref)
-            //     }
-            // }
-            // allow the scene and view to process the event
-            // this.curr_event = event;
-            // await this.scene.addEvent(event); // send event to 3D scene
-            // await this.view.addEvent(event); // send event to react view
             this.dispatchEvent(new CustomEvent(event.type, event));
         }
     }
@@ -235,6 +211,21 @@ const quaternion_schema = {
     }
 };
 
+const box_schema = {
+    "description": "dimension and location of a box",
+    "type": "object",
+    "properties": {
+        "dimension":{
+            "description": "dimension triplet",
+            "type": {"$ref":"#/definitions/triplet"}
+        },
+        "position":{
+            "description": "offset triplet",
+            "type": {"$ref":"#/definitions/triplet"}
+        }
+    }
+}
+
 const user_schema = {
     "description": "User identity data",
     "properties": {
@@ -290,6 +281,13 @@ const mesh_schema = {
         "headY": {
             "description": "elevation of eyepoint; used for camera and lighting",
             "type":"number"
+        },
+        "physicsBoxes":{
+            "description": "array of physics bounding boxes",
+            "type":"array",
+            "items":{
+
+            }
         }
     },
     "required": ['mesh_id']
@@ -435,7 +433,8 @@ const event_schema = {
         "remove_item": remove_item_schema,
         "move_item": move_item_schema,
         "initialize": init_schema,
-        "spray": spray_schema
+        "spray": spray_schema,
+        "box": box_schema,
     },
     "type": "object",
     "properties": {
@@ -449,3 +448,172 @@ const event_schema = {
         }
     }
 }
+
+
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Pieces,
+//         id:2,
+//         ref:'./sample_meshes/henfeather.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:5, z:0},
+//         snapTo:SNAPSTO.Center,
+//         position:{x:-25, y:0, z:-25},
+//         rotation:NORTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Pieces,
+//         id:2,
+//         ref:'./sample_meshes/kork.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:5, z:0},
+//         snapTo:SNAPSTO.Center,
+//         position:{x:-25, y:0, z:-50},
+//         rotation:EAST,
+//     }
+// })
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Pieces,
+//         id:2,
+//         ref:'./sample_meshes/carrion_crawler.stl',
+//         format:'stl',
+//         snapOffset:{x:25, y:5, z:25},
+//         position:{x:-175, y:0, z:-75},
+//         rotation:WEST,
+//     }
+// })
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_corner.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-30, y:0, z:0},
+//         rotation:NORTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_wall.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-75, y:0, z:0},
+//         rotation:NORTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_wall.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-125, y:0, z:0},
+//         rotation:NORTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_corner.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-175, y:0, z:-50},
+//         rotation:EAST,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_wall.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-175, y:0, z:-100},
+//         rotation:EAST,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_corner.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-125, y:0, z:-150},
+//         rotation:SOUTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_wall.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-75, y:0, z:-150},
+//         rotation:SOUTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_wall.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-25, y:0, z:-150},
+//         rotation:SOUTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_corner.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:25, y:0, z:-100},
+//         rotation:WEST,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_wall.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:26, y:0, z:-55},
+//         rotation:WEST,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_floor.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-75, y:0, z:-55},
+//         rotation:NORTH,
+//     }
+// });
+// this.loadMesh({
+//     mesh:{
+//         layer:LAYERS.Map,
+//         id:1,
+//         ref:'./sample_meshes/stone_floor.stl',
+//         format:'stl',
+//         snapOffset:{x:0, y:0, z:0},
+//         position:{x:-125, y:0, z:-55},
+//         rotation:NORTH,
+//     }
+// });

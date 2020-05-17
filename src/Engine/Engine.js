@@ -1,23 +1,17 @@
 import Model from './Model.js';
 import * as THREE from 'three';
-//import * as MODEL from 'model';
 import C from 'cannon';
 import EVENTS from '../Enums/eventTypes.js';
 import LAYERS from '../Enums/layerTypes.js';
 import SPLATS from '../Enums/splatTypes.js';
 import SNAPSTO from '../Enums/snapTypes.js';
-//import { threeToCannon } from 'three-to-cannon';
 
-// import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
-// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
-//import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
 import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
-import snapsTo from '../Enums/snapTypes.js';
 
 const HORIZON = 0x000000;
 const GROUND = 0x222222;
@@ -57,8 +51,6 @@ const DECALS = new Map([
     [SPLATS.Fluid, new THREE.MeshPhongMaterial( {specular: 0x111111, shininess: 100} )],
     [SPLATS.Gel, new THREE.MeshPhongMaterial( {specular: 0x111111, shininess: 300} )],
 ]);
-
-//const LOADERS = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
 
 const SCALE = 25; // mm to in
 const PIECE_LAYER_Y = 5;
@@ -115,9 +107,6 @@ function snapToGrid(position, snapOffset, snapTo, layer){
 }
 
 function sum(pos1, pos2){
-    // var {x1, y1, z1} = pos1;
-    // var {x2, y2, z2} = pos2;
-    // return {x:x1+x2, y:y1+y2, z:z1+z2};
     var x = pos1.x + pos2.x;
     var y = pos1.y + pos2.y;
     var z = pos1.z + pos2.z;
@@ -125,9 +114,8 @@ function sum(pos1, pos2){
 }
 
 function switchCameraToOverheadView(camera, position){
-    //camera.rotation.set(0,0,0);
+    camera.quaternion.set(0, Math.sqrt(0.5), Math.sqrt(0.5), 0);
     camera.position.set(position.x, 400, position.z);
-    camera.quaternion.set(0, 0, -Math.sqrt(0.5), Math.sqrt(0.5));
 }
 
 
@@ -137,10 +125,6 @@ class Engine {
 
         var _this = this;
         
-        // this.model = model;
-        // this.world = world;
-
-        //this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 3000 );
         this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
         this.camera.setFocalLength(18);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -151,12 +135,12 @@ class Engine {
         //orbit controls
 
         var controls = new OrbitControls(this.camera, this.renderer.domElement);
-        controls.enableDamping = true;
         controls.maxPolarAngle = (TAU / 4 );
         controls.minPolarAngle = (TAU / 32);
         controls.minDistance = 75;
         controls.maxDistance = 350;
         controls.target = new THREE.Vector3(0, -20, 0);
+        controls.update();
 
         
 
@@ -167,42 +151,53 @@ class Engine {
         var dcontrols = new DragControls( this.pieces, this.camera, this.renderer.domElement );
         dcontrols.enabled = true;
         dcontrols.addEventListener( 'hoveron', function ( event ) {
-
+            _this.pieces.forEach((obj) => {
+                obj.material.emissive.set(0x000000);
+            });
             event.object.material.emissive.set( 0x333333 );
         
         } );
         dcontrols.addEventListener( 'hoveroff', function ( event ) {
 
-            event.object.material.emissive.set( 0x000000 );
+            _this.pieces.forEach((obj) => {
+                obj.material.emissive.set(0x000000);
+            });
         
         } );
         dcontrols.addEventListener('dragstart', (event) => {
+
             controls.enabled = false;
             _this.movement_grid.visible = true;
             _this.static_grid.visible = false;
             _this.lastCameraAngle = _this.camera.rotation.clone();
             _this.lastCameraPos = _this.camera.position.clone();
             switchCameraToOverheadView(_this.camera, event.object.position);
+
         });
         dcontrols.addEventListener('drag', (event) => {
+
             event.object.position.y = 15;
+
         });
         dcontrols.addEventListener('dragend', (event) => {
+
             event.object.material.emissive.set( 0x000000 );
-            // var pos = snapToGrid({
-            //     x:event.object.position.x,
-            //     y:event.object.position.y,
-            //     z:event.object.position.z
-            // });
-            // event.object.position.x = pos.x;
-            // event.object.position.y = 5;
-            // event.object.position.z = pos.z;
-            event.object.position.copy(snapToGrid(event.object.position, event.object.snapOffset, event.object.snapTo, event.object.layer))
+
+            event.object.position.copy(
+                snapToGrid(
+                    event.object.position, 
+                    event.object.snapOffset, 
+                    event.object.snapTo, 
+                    event.object.layer
+                )
+            );
+
             _this.movement_grid.visible = false;
             _this.static_grid.visible = true;
-            // _this.camera.matrix.copy(_this.lastCameraView);
+            
             _this.camera.rotation.copy(_this.lastCameraAngle);
             _this.camera.position.copy(_this.lastCameraPos.add(event.object.position));
+            controls.target.copy(event.object.position);
             controls.enabled = true;
 
             Model.moveMesh(event.object, {});
@@ -419,7 +414,6 @@ class Engine {
 
         var animate = () => {
             bokehPass.uniforms['focus'].value = controls.object.position.distanceTo(controls.target);
-            controls.update();
             requestAnimationFrame( animate );
             composer.render(_this.scene, _this.camera);
         }
@@ -436,7 +430,6 @@ class Engine {
 
         this.scene = new THREE.Scene();
 
-        this.contents = [];
         this.pieces = [];
 
         // initalize scene
@@ -459,7 +452,10 @@ class Engine {
         directionalLight.castShadow = true;
         this.scene.add( directionalLight );
 
-        var ground = new THREE.Mesh( new THREE.PlaneBufferGeometry( 3000, 3000 ), new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: false, flatShading: true } ) );
+        var ground = new THREE.Mesh( 
+            new THREE.PlaneBufferGeometry( 3000, 3000 ), 
+            new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: false, flatShading: true } ) 
+        );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
@@ -475,91 +471,51 @@ class Engine {
 
     }
 
+    initializeMesh(mesh, event){
+        var m = event.mesh;
+
+        mesh.layer = m.layer;
+        mesh.mesh_id = m.id;
+        mesh.snapOffset = m.snapOffset;
+        mesh.snapTo = m.snapTo;
+        mesh.position.copy(snapToGrid(m.position, m.snapOffset, m.snapTo, m.layer));
+        var {i, j, k, w} = m.rotation;
+        mesh.quaternion.set(i, j, k, w);
+        switch(mesh.layer){
+            case LAYERS.Map:
+                // Map layer stuff
+                break;
+
+            case LAYERS.Pieces:
+                // Pieces stuff
+                this.pieces.push(mesh);
+                break;
+
+            case LAYERS.Hologram:
+                // meshes that noclip
+                break;
+
+            case LAYERS.Toybox:
+                // meshes that load but don't get added to the main scene
+                break;
+
+            default:
+
+                break;
+        }
+        this.scene.add(mesh);
+    }
+
     loadMesh(event){
         Model.getGeometry(
             (geometry) => {
                 var mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
-                
-                mesh.layer = event.mesh.layer;
-                mesh.mesh_id = event.mesh.id;
-                mesh.snapOffset = event.mesh.snapOffset;
-                mesh.snapTo = event.mesh.snapTo;
-                //var pos = sum(event.mesh.snap_offset, snapToGrid(event.mesh.position));
-                // var {x, y, z} = pos;
-                // mesh.position.set(x, y, z);
-                mesh.position.copy(snapToGrid(event.mesh.position, event.mesh.snapOffset, event.mesh.snapTo, event.mesh.layer));
-                var {i, j, k, w} = event.mesh.rotation;
-                mesh.quaternion.set(i, j, k, w);
-                switch(mesh.layer){
-                    case LAYERS.Map:
-                        // Map layer stuff
-                        break;
-
-                    case LAYERS.Pieces:
-                        // Pieces stuff
-                        this.pieces.push(mesh);
-                        break;
-
-                    case LAYERS.Hologram:
-                        // meshes that noclip
-                        break;
-
-                    case LAYERS.Toybox:
-                        // meshes that load but don't get added to the main scene
-                        break;
-
-                    default:
-
-                        break;
-                }
-                this.scene.add(mesh);
-                //mesh.matrixAutoUpdate = false; //maybe?
+                this.initializeMesh(mesh, event);
             },
-            event
+            event.mesh.ref,
+            event.mesh.format
         );
     }
-
-    optimizedBulkLoad(events){
-        var addsByMeshRef = new Map();
-
-    }
-
-    // addEvent(event){
-    //     switch(event.type) {
-
-    //         case EVENTS.Initialize:
-    //             this.newScene();
-    //             break;
-
-    //         case EVENTS.AddItem:
-    //             // create a mesh object
-    //             // put it in the scene
-    //             this.loadMesh(event);
-
-    //             //make a body
-    //             var body = new C.Body({
-    //                 mass: 1
-    //             });
-
-    //             //add body to world
-    //             break;
-            
-    //         case EVENTS.RemoveItem:
-
-    //             break;
-
-    //         case EVENTS.MoveItem:
-
-    //             break;
-
-    //         default:
-
-    //     }
-    // }
-
-    // onScroll(){
-    //     this.bokehPass.uniforms["focus"] = this.camera.uniforms['zoom'];
-    // }
 
     onWindowResize() {
 
