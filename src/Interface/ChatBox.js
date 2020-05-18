@@ -23,7 +23,7 @@ export default class ChatBox extends Component {
         };
 
         return (
-            <div />
+            <div style={style}/>
         );
     }
 }
