@@ -14,7 +14,7 @@ export default class ViewPort extends Component {
 
     render() {
         return (
-          <div ref={ref => (this.mount = ref)} />
+          <div id="Viewport" ref={ref => (this.mount = ref)} />
         )
     }
 }

@@ -7,8 +7,8 @@ export default class ChatBox extends Component {
     componentDidMount(){
         var _this = this;
         this.state = {
-            messageList: []
-        };
+                messageList: []
+            };
         Model.addEventListener(EVENTS.AddMessage, (event) => {
             _this.setState({
                 messageList: [..._this.state.messageList, event.content]
@@ -23,7 +23,41 @@ export default class ChatBox extends Component {
         };
 
         return (
-            <div style={style}/>
+            <div class="ui" id="ChatBox" style={style}>
+                <ChatDisplay />
+                <ChatEntry />
+            </div>
+        );
+    }
+}
+
+export class ChatDisplay extends Component {
+    
+    render(){
+        const style = {
+
+        };
+
+        return (
+            <div id="ChatDisplay" style={style}>
+                <p>Lorem ipsum</p>
+            </div>
+        )
+    }
+
+}
+
+export class ChatEntry extends Component {
+
+    render(){
+
+        const style = {
+
+        };
+        return (
+            <div id="ChatEntry" style={style}>
+                <p>Lorem ipsum</p>
+            </div>
         );
     }
 }
