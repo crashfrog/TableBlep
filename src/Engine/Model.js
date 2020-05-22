@@ -38,7 +38,7 @@ class Model extends EventTarget {
     //     return this.owner_by_obj.get(mesh_id) === user_id;
     // }
 
-    startClient(){
+    startClient(thread_id){
         //init the client
         const key_prefix = "blep"
         const name = "Some name";
@@ -92,7 +92,7 @@ class Model extends EventTarget {
         this.injectEvent({
             type:EVENTS.AddMessage,
             content:message,
-            sender:this.view.getOwnerInfo,
+            //sender:this.view.getOwnerInfo,
             metadata:metadata
         });
     }

@@ -8,8 +8,8 @@ export default class InfoBox extends Component {
         };
 
         return (
-            <div class="ui" id="InfoBox" style={style}>
-                <p>Lorem ipsum</p>
+            <div className="ui container" id="InfoBox" style={style}>
+                <p>info stuff</p>
             </div>
         );
     }

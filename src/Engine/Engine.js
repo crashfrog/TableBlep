@@ -198,6 +198,7 @@ class Engine {
             _this.camera.rotation.copy(_this.lastCameraAngle);
             _this.camera.position.copy(_this.lastCameraPos.add(event.object.position));
             controls.target.copy(event.object.position);
+            controls.update();
             controls.enabled = true;
 
             Model.moveMesh(event.object, {});
