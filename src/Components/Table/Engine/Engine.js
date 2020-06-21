@@ -1,10 +1,10 @@
 import Model from './Model.js';
 import * as THREE from 'three';
 import C from 'cannon';
-import EVENTS from '../Enums/eventTypes.js';
-import LAYERS from '../Enums/layerTypes.js';
-import SPLATS from '../Enums/splatTypes.js';
-import SNAPSTO from '../Enums/snapTypes.js';
+import EVENTS from '../../../Enums/eventTypes.js';
+import LAYERS from '../../../Enums/layerTypes.js';
+import SPLATS from '../../../Enums/splatTypes.js';
+import SNAPSTO from '../../../Enums/snapTypes.js';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
@@ -25,7 +25,8 @@ const MATERIALS = new Map([
                         specular:       0x111111, 
                         shininess:      20, 
                         shadowSide:     THREE.FrontSide,
-                        flatShading:    true, 
+                        flatShading:    true,
+                        fog:            true, 
                         } )], 
                     [LAYERS.Pieces, new THREE.MeshStandardMaterial({
                         color:          0x7a4719, 
@@ -35,8 +36,21 @@ const MATERIALS = new Map([
                         metalness:      0.8,
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true,
+                        fog:            true,
                         } )]
                     ]);
+
+const GHOST_MATERIAL = new THREE.MeshPhongMaterial( {
+                        color:          0x6d7d7f,
+                        emissive:       0xafa4ff,
+                        shininess:      0,
+                        flatShading:    true,
+                        transparent:    true,
+                        opacity:        0.50,
+                        visible:        false,
+                        fog:            true,
+
+} );
 
 const EFFECTS = {
 
@@ -123,7 +137,7 @@ class Engine {
 
     constructor(){
 
-        var _this = this;
+        let _this = this;
         
         this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
         this.camera.setFocalLength(18);
@@ -152,38 +166,44 @@ class Engine {
         dcontrols.enabled = true;
         dcontrols.addEventListener( 'hoveron', function ( event ) {
             _this.pieces.forEach((obj) => {
-                obj.material.emissive.set(0x000000);
+                obj.of.material.emissive.set(0x000000);
             });
-            event.object.material.emissive.set( 0x333333 );
+            event.object.of.material.emissive.set( 0x333333 );
         
         } );
         dcontrols.addEventListener( 'hoveroff', function ( event ) {
 
             _this.pieces.forEach((obj) => {
-                obj.material.emissive.set(0x000000);
+                obj.of.material.emissive.set(0x000000);
             });
         
         } );
         dcontrols.addEventListener('dragstart', (event) => {
+
+            let ghost = event.object;
+
+            ghost.material.visible.set( true );
 
             controls.enabled = false;
             _this.movement_grid.visible = true;
             _this.static_grid.visible = false;
             _this.lastCameraAngle = _this.camera.rotation.clone();
             _this.lastCameraPos = _this.camera.position.clone();
-            switchCameraToOverheadView(_this.camera, event.object.position);
+            switchCameraToOverheadView(_this.camera, ghost.position);
 
         });
         dcontrols.addEventListener('drag', (event) => {
 
-            event.object.position.y = 15;
+            let ghost = event.object;
+            ghost.position.y = 15;
 
         });
         dcontrols.addEventListener('dragend', (event) => {
 
-            event.object.material.emissive.set( 0x000000 );
+            let ghost = event.object;
+            let mesh = ghost.of;
 
-            event.object.position.copy(
+            ghost.position.copy(
                 snapToGrid(
                     event.object.position, 
                     event.object.snapOffset, 
@@ -196,12 +216,14 @@ class Engine {
             _this.static_grid.visible = true;
             
             _this.camera.rotation.copy(_this.lastCameraAngle);
-            _this.camera.position.copy(_this.lastCameraPos.add(event.object.position));
-            controls.target.copy(event.object.position);
+            _this.camera.position.copy(_this.lastCameraPos.add(ghost.position));
+            controls.target.copy(ghost.position);
             controls.update();
             controls.enabled = true;
 
-            Model.moveMesh(event.object, {});
+            Model.moveMesh(mesh.id, mesh.layer, ghost.position, ghost.quaternion, {});
+
+            ghost.material.visible.set( false );
 
         });
         
@@ -395,19 +417,30 @@ class Engine {
         // Register to receive model events
 
         Model.addEventListener( EVENTS.Initalize, (event) => {
-            _this.newScene();
+            this.newScene();
         }, false );
 
         Model.addEventListener( EVENTS.AddItem, (event) => {
-            _this.loadMesh(event);
+            this.loadMesh(event);
         }, false );
 
         Model.addEventListener( EVENTS.MoveItem, (event) => {
-
+            let mesh = this.meshesById.get(event.mesh.id);
+            let {x, y, z} = event.mesh.position;
+            let {i, j, k, w} = event.mesh.quaternion;
+            mesh.position.set(x, y, z);
+            mesh.quaternion.set(i, j, k, w);
+            mesh.ghost.position.copy(mesh.position);
+            mesh.ghost.quaternion.copy(mesh.quaternion);
         }, false );
 
         Model.addEventListener( EVENTS.RemoveItem, (event) => {
-
+            let mesh = this.meshesById.get(event.mesh.id);
+            if (mesh) {
+                mesh.material.visible = false;
+                mesh.material.dispose();
+                mesh.dispose();
+            }
         }, false);
 
 
@@ -426,12 +459,21 @@ class Engine {
     newScene(){
 
         if (this.scene){
+            this.meshesById.forEach((mesh, key, map) => {
+                mesh.material.dispose();
+                mesh.dispose();
+            });
+            for (const ghost of this.pieces){
+                ghost.material.dispose();
+                ghost.dispose();
+            }
             this.scene.dispose();
         }
 
         this.scene = new THREE.Scene();
 
         this.pieces = [];
+        this.meshesById = new Map();
 
         // initalize scene
         
@@ -472,15 +514,20 @@ class Engine {
 
     }
 
-    initializeMesh(mesh, event){
-        var m = event.mesh;
+    initializeMesh(geometry, event){
+
+        let mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
+
+        let m = event.mesh;
+
+        this.meshesById.set(m.id, mesh);
 
         mesh.layer = m.layer;
         mesh.mesh_id = m.id;
         mesh.snapOffset = m.snapOffset;
         mesh.snapTo = m.snapTo;
         mesh.position.copy(snapToGrid(m.position, m.snapOffset, m.snapTo, m.layer));
-        var {i, j, k, w} = m.rotation;
+        let {i, j, k, w} = m.rotation;
         mesh.quaternion.set(i, j, k, w);
         switch(mesh.layer){
             case LAYERS.Map:
@@ -489,7 +536,13 @@ class Engine {
 
             case LAYERS.Pieces:
                 // Pieces stuff
-                this.pieces.push(mesh);
+                // create a ghost mesh for piece movement
+                let ghost_mesh = new THREE.Mesh(geometry, GHOST_MATERIAL.clone());
+                ghost_mesh.position.copy(mesh.position);
+                ghost_mesh.quaternion.copy(mesh.quaternion);
+                ghost_mesh.of = mesh;
+                mesh.ghost = ghost_mesh;
+                this.pieces.push(ghost_mesh);
                 break;
 
             case LAYERS.Hologram:
@@ -510,8 +563,7 @@ class Engine {
     loadMesh(event){
         Model.getGeometry(
             (geometry) => {
-                var mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
-                this.initializeMesh(mesh, event);
+                this.initializeMesh(geometry, event);
             },
             event.mesh.ref,
             event.mesh.format

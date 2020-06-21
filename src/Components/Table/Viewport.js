@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import Model from '../Engine/Model.js';
-import Engine from '../Engine/Engine.js';
+import Model from './Engine/Model.js';
+import Engine from './Engine/Engine.js';
 
 
 

@@ -1,4 +1,4 @@
-import Model from 'Engine/Model.js';
+import Model from './Engine/Model.js';
 import EVENTS from 'Enums/eventTypes.js';
 import React, { Component } from "react";
 
@@ -69,31 +69,32 @@ export class ChatDisplay extends Component {
 
 }
 
-export class ChatEntry extends Component {
+    export class ChatEntry extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-          value: 'chat stuff goes here'
-        };
-        this.handleChange = (event) => {
-            this.setState({value: event.target.value});
-        };
-        this.handleSubmit = (event) => {
-            //console.log(this.state.value);
-            Model.addMessage(this.state.value);
-            this.setState({value:""});
-            event.preventDefault();
-        };
-    }
+        constructor(props) {
+            super(props);
+            this.state = {
+            value: 'chat stuff goes here'
+            };
+        }
 
-    render(){
-        return (
-            <form onSubmit={this.handleSubmit}>
-                <label>
-                    <input type="text" id="ChatEntryBox" value={this.state.value} onChange={this.handleChange} />
-                </label>
-            </form>
-        );
+        render(){
+            return (
+                <form onSubmit={(event) => {
+
+                    this.setState({value: event.target.value});
+
+                }}>
+                    <label>
+                        <input type="text" id="ChatEntryBox" value={this.state.value} onChange={(event) => {
+
+                            Model.addMessage(this.state.value);
+                            this.setState({value:""});
+                            event.preventDefault();
+                            
+                        }} />
+                    </label>
+                </form>
+            );
+        }
     }
-}

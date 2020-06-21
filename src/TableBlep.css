@@ -1,9 +1,96 @@
-.App {
+:root {
+  --bg-color: #282c34;
+  --bg-accent: #888888;
+  --ui-color: #333333;
+  --ui-border: #AAAAFF;
+  --chat-bg-color: #999999;
+  --chat-local-color: #222222;
+  --chat-remote-color: #555566;
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  margin:0;
+  padding:0;
+  border:0;
+}
+
+* {
+  justify-self: stretch;
+  color: white;
+  list-style-type:none;
+  text-decoration: none;
+}
+
+.body {
+  clear: both;
+  margin: 0 auto; 
+  width: 1100px;
+  padding-bottom:1rem;
+}
+
+header {
+  position: absolute;
+  top: 0;
+}
+
+header, footer {
+  text-align: center;
+  background-color: var(--ui-color);
+  width:100%;
+}
+
+footer {
+  position: absolute;
+  bottom: 0;
+  min-height: 1rem;
+}
+
+.App-header {
+  text-align: center;
+  background-color: var(--bg-color);
+}
+
+.Modes {
+  display: flex;
+  justify-content: center;
+}
+
+nav ul {
+  padding-top: 20%;
+}
+
+nav li {
+  border:2px solid var(--bg-accent);
+  width: 275px;
   text-align: center;
 }
 
+nav a {
+  display: inline-block;
+  width:100%;
+}
+
+nav li:hover, nav a:hover {
+  background-color: var(--bg-accent);
+  transition: 0.15s;
+}
+
+.Modes .Option {
+  margin: 50px;
+  /* flex-flow: row wrap;
+  width: 275px; */
+}
+
+.Modes .Title {
+
+}
+
+.Modes .Description {
+  
+}
+
 .App-logo {
-  height: 40vmin;
+  min-height: 40vmin;
   pointer-events: none;
 }
 
@@ -13,23 +100,20 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
+.App-main {
   min-height: 100vh;
   display: grid;
   position: absolute;
-  justify-self: stretch;
+  
   font-size: calc(10px + 2vmin);
-  color: white;
-
   grid-template-columns: 25% 20% auto 20% 25%;
   grid-template-rows: 45px 20% auto 30% 60px;
 
 }
 
 .ui {
-  background-color: #333333;
-  border-color: #AAAAFF;
+  background-color: var(--ui-color);
+  border-color: var(--ui-border);
   position:absolute;
   z-index:100;
   box-sizing: border-box;
@@ -78,7 +162,7 @@
 }
 
 .chatMessage {
-  background-color: #222222;
+  background-color: var(--chat-remote-color);
   text-align: left;
 }
 
@@ -89,7 +173,7 @@
 }
 
 .chatMessageLocal {
-  background-color: #555566;
+  background-color: var(--chat-local-color);
   min-width:80%;
   padding:1px;
   padding-right:30px;
@@ -106,7 +190,7 @@
 }
 
 #ChatDisplay {
-  background-color: #999999;
+  background-color: var(--chat-bg-color);
   min-height:75%;
   max-height:75%;
   overflow: scroll;

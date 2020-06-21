@@ -1,10 +1,12 @@
 //import Engine from './Engine.js';
 
-import {Client} from '@textile/threads-client';
-import EVENTS from '../Enums/eventTypes.js';
-import LAYERS from '../Enums/layerTypes.js';
-import SPLATS from '../Enums/splatTypes.js';
-import SNAPS_TO from '../Enums/snapTypes.js';
+import { Database, Identity, UserAuth, ThreadID } from '@textile/threads';
+import { collect } from 'streaming-iterables'
+//import { ThreadID } from '@textile/threads-id';
+import EVENTS from '../../../Enums/eventTypes.js';
+import LAYERS from '../../../Enums/layerTypes.js';
+import SPLATS from '../../../Enums/splatTypes.js';
+import SNAPS_TO from '../../../Enums/snapTypes.js';
 
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -17,45 +19,53 @@ class Model extends EventTarget {
 
     constructor(){
         super();
-        // this.scene = scene; // the three.js scene and its physics
-        // this.tx_thread = tx_thread;
-        // this.view = view; // the react UI with the chat window
-
-        // a series of maps to cache mesh data
-        // this.obj_by_mesh = new Map();
-        // this.mesh_by_id = new Map();
-        // this.owner_by_obj = new Map();
         this.geometryCache = new Map();
-        this.curr_event = {};
+    }
+
+    initDD(auth, identity){
+        this.db = new Database.withUserAuth(auth, 'scene');
+        this.currentThreadId = this.newMap(identity);
     }
 
     dumpCache(){
         this.geometryCache = new Map();
-        this.curr_event = {};
     }
 
-    // owns(user_id, mesh_id){
-    //     return this.owner_by_obj.get(mesh_id) === user_id;
-    // }
+    async connect_to(identity, thread_id){
+        let threadId = ThreadID.fromString(thread_id);
+        this.dumpCache();
+        await this.db.start(identity, {threadId});
+        let events = this.db.collections.get('Event');
+        if (!events) throw new Error(`${thread_id} could not be connected to.`);
+        await this.attach_to(events);
+    }
+    
 
-    startClient(thread_id){
-        //init the client
-        const key_prefix = "blep"
-        const name = "Some name";
-        const key = `${key_prefix}-${uuid()}`;
-        const config = {
-            key,
-            name,
-            //type: Thread.Type.OPEN,
-            //sharing: Thread.Sharing.SHARED,
-            schema: { id: '', json: JSON.stringify(event_schema)},
-            force: false,
-            whitelist: [],
-        };
+    async attach_to(events){
+        for (const event of await collect(events.find({}))){
+            this.dispatchEvent(event);
+        }
+        this.db.emitter.on('Event.*.0', (update) => {
+            this.dispatchEvent(update);
+        })
     }
 
-    async getNewEvents(){
-        return [];
+    async newMap(identity, metadata={}){
+
+        let threadId = ThreadID.fromRandom();
+
+        await this.db.start(identity, { threadId });
+        
+        let collection = await this.db.newCollection('Event', event_schema);
+
+        this.attach_to(collection);
+
+        await this.injectEvent({
+            type:EVENTS.Initialize,
+            metadata:metadata
+        });
+
+        return threadId.toString();
     }
 
     getGeometry(geometry_callback, ref, format){
@@ -78,18 +88,15 @@ class Model extends EventTarget {
         }
     }
 
-    async checkForEvents(){
-        for (const event of await this.getNewEvents()){
-            this.dispatchEvent(new CustomEvent(event.type, event));
-        }
-    }
-
-    injectEvent(event){
+    async injectEvent(event){
         console.info(event);
+        //this.eventList.add(event);
+        let newEvent = this.db.collections.get('Event')(event);
+        await newEvent.save();
     }
 
-    addMessage(message, metadata={}){
-        this.injectEvent({
+    async addMessage(message, metadata={}){
+        await this.injectEvent({
             type:EVENTS.AddMessage,
             content:message,
             //sender:this.view.getOwnerInfo,
@@ -97,9 +104,9 @@ class Model extends EventTarget {
         });
     }
 
-    addMesh(mesh_id, mesh_ref, mesh_format, snap_offset, position, rotation, layer, metadata={}){
+    async addMesh(mesh_id, mesh_ref, mesh_format, snap_offset, position, rotation, layer, metadata={}){
         
-        this.injectEvent({
+        await this.injectEvent({
             type:EVENTS.AddItem,
             mesh:{
                 id:mesh_id,
@@ -124,45 +131,37 @@ class Model extends EventTarget {
         });
     }
 
-    removeMesh(mesh, metadata={}){
-        this.injectEvent({
+    async removeMesh(mesh, metadata={}){
+        await this.injectEvent({
             type:EVENTS.RemoveItem,
             id:mesh.id,
         });
     }
 
-    moveMesh(mesh, metadata={}){
-        this.injectEvent({
+    async moveMesh(mesh_id, layer, position, quaternion, metadata={}){
+        await this.injectEvent({
             type:EVENTS.MoveItem,
             mesh:{
-                id:mesh.mesh_id,
+                id:mesh_id,
                 position:{
-                    x:mesh.position.x,
-                    y:mesh.position.y,
-                    z:mesh.position.z
+                    x:position.x,
+                    y:position.y,
+                    z:position.z
                 },
                 rotation:{
-                    i:mesh.quaternion.x,
-                    j:mesh.quaternion.y,
-                    k:mesh.quaternion.z,
-                    w:mesh.quaternion.w
+                    i:quaternion.x,
+                    j:quaternion.y,
+                    k:quaternion.z,
+                    w:quaternion.w
                 },
-                layer:mesh.layer
+                layer:layer
             },
-            //owner:this.view.getOwnerInfo(),
             metadata:metadata
         });
     }
 
-    newMap(metadata={}){
-        this.injectEvent({
-            type:EVENTS.Initialize,
-            metadata:metadata
-        });
-    }
-
-    spray(sprite, color, position, quaternion){
-        this.injectEvent({
+    async spray(sprite, color, position, quaternion){
+        await this.injectEvent({
             type:EVENTS.Spray,
             sprite:sprite,
             color:color,
@@ -417,7 +416,7 @@ const spray_schema = {
             }
         }
     }
-}
+};
 
 const event_schema = {
     "$schema": "https://json-schema.org/draft-07/schema#",
@@ -438,6 +437,7 @@ const event_schema = {
     },
     "type": "object",
     "properties": {
+        "_id": { type: 'string' },
         "event": {
             "type": [{"$ref": "#/definitions/add_message"},
                      {"$ref": "#/definitions/add_item"},
@@ -447,7 +447,24 @@ const event_schema = {
                      {"$ref": "#/definitions/spray"}]
         }
     }
-}
+};
+
+const event_collection_schema = {
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "$id": "https://tableblep.com/collection.schema.json",
+    "title": "EventList",
+    "description": "Collection",
+    "definitions": {
+        "event": event_schema
+    },
+    "type": "array",
+    "properties":{
+        "_id": { type: 'string' },
+    },
+    "items": {
+        "type": {"$ref": "#/definitions/event"}
+    }
+};
 
 
 // this.loadMesh({
@@ -616,4 +633,31 @@ const event_schema = {
 //         position:{x:-125, y:0, z:-55},
 //         rotation:NORTH,
 //     }
-// });
+// // });
+// > Selected threadDB Create new
+// > Your bucket links:
+// > https://hub.textile.io/thread/bafkztpkuq4lcuwzq5jv4osegcbfh4bk3leyceu4scmsas3zo7pdv5na/buckets/bafzbeihpowhhcchuwmz3diwwaonp7kj2y7fcawyhkjpehc4egzrqyfigkq Thread link
+// > https://hub.textile.io/ipns/bafzbeihpowhhcchuwmz3diwwaonp7kj2y7fcawyhkjpehc4egzrqyfigkq IPNS link (propagation can be slow)
+// > https://bafzbeihpowhhcchuwmz3diwwaonp7kj2y7fcawyhkjpehc4egzrqyfigkq.textile.space Bucket website
+// > Success! Initialized an empty bucket in /Users/justin/tableblep/public/sample_meshes
+// ➜  sample_meshes git:(master) ✗ hub bucket push
+// > new file:  brick_wall.stl
+// > new file:  carrion_crawler.stl
+// > new file:  henfeather.stl
+// > new file:  kork.stl
+// > new file:  stone_corner.stl
+// > new file:  stone_floor.stl
+// > new file:  stone_passage.stl
+// > new file:  stone_wall.stl
+// > new file:  stone_wall_end.stl
+// Push 9 changes: y█
+// + brick_wall.stl: bafybeiemubq44w5zqtuw5y2tveiq4l6pptzyvcgmtmff3ihsmozov2n4vq
+// + carrion_crawler.stl: bafybeicbt2yks3n5wenmqhipluddv5kiaz5a7vv5gwe7ch53ptmrz7fccm
+// + henfeather.stl: bafybeibcearuxt7ho2zbtqgwcjno66lnrxls5xlwpqnoemvouu2s4w2aty
+// + kork.stl: bafybeihhfoheuxo4j65qtwjgippizmfwiwqmkrzmhr4zl5jzt5dbv2r5x4
+// + stone_corner.stl: bafybeia4cxewfcvehnhnsxysxak47f7seafgwkvt4eoywowj65u7xfnmlq
+// + stone_floor.stl: bafybeibpbh4jfch6xfguyeed5blqvirwqbkdngjjnkyjbsq7lbc64zwryq
+// + stone_passage.stl: bafybeicygt7nwbropng5ivktahdoqlz2zg72iqy3smudn5rarh3g7fftx4
+// + stone_wall.stl: bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i
+// + stone_wall_end.stl: bafybeiffzwjfqmqbghvthd3n6nm2zfvdhzt3u2v4vycjqlxcdv47kmissy
+// > bafybeibyjyp2yvpoeq6dbrf3mwcna57gwnthqzxr72frmjulq2loibr6fy
