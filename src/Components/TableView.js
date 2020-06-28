@@ -5,7 +5,7 @@ import ChatBox from './Table/ChatBox.js';
 import InfoBox from './Table/InfoBox.js';
 import Tools from './Table/Tools.js';
 
-function TableView() {
+function TableView(props) {
   return (
     <div className="App">
       <main className="App-main">

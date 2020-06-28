@@ -19,7 +19,8 @@
     "react-scripts": "3.4.1",
     "three": "^0.115.0",
     "three-to-cannon": "^2.0.0",
-    "threejs-dice": "^1.1.0"
+    "threejs-dice": "^1.1.0",
+    "uuid": "^8.1.0"
   },
   "devDependencies": {
     "kind-of": ">=6.0.3"

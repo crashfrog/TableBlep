@@ -26,17 +26,17 @@ const MATERIALS = new Map([
                         shininess:      20, 
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true,
-                        fog:            true, 
+                        fog:            true,
+                        depthWrite:     true, 
                         } )], 
                     [LAYERS.Pieces, new THREE.MeshStandardMaterial({
                         color:          0x7a4719, 
-                        specular:       0x333333, 
-                        shininess:      300,
                         roughness:      0.6,
                         metalness:      0.8,
                         shadowSide:     THREE.FrontSide,
                         flatShading:    true,
                         fog:            true,
+                        depthWrite:     true,
                         } )]
                     ]);
 
@@ -92,7 +92,7 @@ const WEST = {i:-0.5, j:0.5, k:0.5, w:0.5};
 function oneInchGrid(){
     var grid = new THREE.GridHelper( SCALE * 100, 100, 0xAAAAFF, 0xAAAAFF );
     grid.material.opacity = 1;
-    grid.material.transparent = true;
+    grid.material.transparent = false;
     return grid;
 }
 
@@ -133,7 +133,7 @@ function switchCameraToOverheadView(camera, position){
 }
 
 
-class Engine {
+export default class Engine {
 
     constructor(){
 
@@ -225,177 +225,6 @@ class Engine {
 
             ghost.material.visible.set( false );
 
-        });
-        
-        // sample map and pieces
-
-        
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Pieces,
-                id:2,
-                ref:'./sample_meshes/henfeather.stl',
-                format:'stl',
-                snapOffset:{x:0, y:5, z:0},
-                snapTo:SNAPSTO.Center,
-                position:{x:-25, y:0, z:-25},
-                rotation:NORTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Pieces,
-                id:2,
-                ref:'./sample_meshes/kork.stl',
-                format:'stl',
-                snapOffset:{x:0, y:5, z:0},
-                snapTo:SNAPSTO.Center,
-                position:{x:-25, y:0, z:-50},
-                rotation:EAST,
-            }
-        })
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Pieces,
-                id:2,
-                ref:'./sample_meshes/carrion_crawler.stl',
-                format:'stl',
-                snapOffset:{x:25, y:5, z:25},
-                position:{x:-175, y:0, z:-75},
-                rotation:WEST,
-            }
-        })
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_corner.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-30, y:0, z:0},
-                rotation:NORTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_wall.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-75, y:0, z:0},
-                rotation:NORTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_wall.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-125, y:0, z:0},
-                rotation:NORTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_corner.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-175, y:0, z:-50},
-                rotation:EAST,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_wall.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-175, y:0, z:-100},
-                rotation:EAST,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_corner.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-125, y:0, z:-150},
-                rotation:SOUTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_wall.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-75, y:0, z:-150},
-                rotation:SOUTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_wall.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-25, y:0, z:-150},
-                rotation:SOUTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_corner.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:25, y:0, z:-100},
-                rotation:WEST,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_wall.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:26, y:0, z:-55},
-                rotation:WEST,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_floor.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-75, y:0, z:-55},
-                rotation:NORTH,
-            }
-        });
-        this.loadMesh({
-            mesh:{
-                layer:LAYERS.Map,
-                id:1,
-                ref:'./sample_meshes/stone_floor.stl',
-                format:'stl',
-                snapOffset:{x:0, y:0, z:0},
-                position:{x:-125, y:0, z:-55},
-                rotation:NORTH,
-            }
         });
 
         // FOD/Bokeh effect
@@ -497,7 +326,7 @@ class Engine {
 
         var ground = new THREE.Mesh( 
             new THREE.PlaneBufferGeometry( 3000, 3000 ), 
-            new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: false, flatShading: true } ) 
+            new THREE.MeshPhongMaterial( { color: GROUND, depthWrite: true, flatShading: true } ) 
         );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
@@ -580,4 +409,4 @@ class Engine {
 
 }
 
-export default Engine = new Engine();
+//export default Engine = new Engine();

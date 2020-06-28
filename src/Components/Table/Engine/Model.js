@@ -11,8 +11,6 @@ import SNAPS_TO from '../../../Enums/snapTypes.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
-import uuid from 'uuid/v4';
-
 const loaders = {'stl':new STLLoader(), 'gltf': new GLTFLoader()};
 
 class Model extends EventTarget {
@@ -82,7 +80,7 @@ class Model extends EventTarget {
                     //console.info(this.geometry_cache);
                     return geometry_callback(geometry);
                 },
-                function(e) {console.info(e)},
+                function(e) {console.info( e.loaded / e.total * 100 )},
                 function(e) {console.error(e)}
             );
         }

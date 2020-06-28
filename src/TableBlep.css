@@ -6,6 +6,7 @@
   --chat-bg-color: #999999;
   --chat-local-color: #222222;
   --chat-remote-color: #555566;
+  --transparent: rgba(0,0,255,0);
   position: relative;
   min-height: 100vh;
   background-color: var(--bg-color);
@@ -59,7 +60,7 @@ nav ul {
   padding-top: 20%;
 }
 
-nav li {
+nav li, .button {
   border:2px solid var(--bg-accent);
   width: 275px;
   text-align: center;
@@ -70,7 +71,7 @@ nav a {
   width:100%;
 }
 
-nav li:hover, nav a:hover {
+nav li:hover, nav a:hover, .button:hover {
   background-color: var(--bg-accent);
   transition: 0.15s;
 }
@@ -124,6 +125,37 @@ nav li:hover, nav a:hover {
   min-height:100%;
   align-self: stretch;
   justify-self: stretch;
+  background-color: var(--transparent);
+}
+
+#ModelBaseSelector {
+  grid-column: 3/4;
+  grid-row: 1/2;
+}
+
+#ModelScaleSelector {
+  grid-column: 1/3;
+  grid-row: 2/4;
+}
+
+#ModelPurposeSelector {
+  grid-column: 4/-1;
+  grid-row: 1/3;
+}
+
+#ModelDecimateSelector {
+  grid-column: 3/4;
+  grid-row: 4/-1;
+}
+
+#ResetModelTransformations {
+  grid-column: 1/2;
+  grid-row: 4/-1;
+}
+
+#SaveModelToToybox {
+  grid-column: 4/-1;
+  grid-row: 4/-1;
 }
 
 #Viewport {

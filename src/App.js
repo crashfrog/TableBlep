@@ -9,14 +9,25 @@ import {Switch, Route} from 'react-router-dom';
 
 class App extends Component {
 
+    constructor(props){
+        super(props);
+        this.state = {
+            identity: {
+                displayName: "",
+                userId: ""
+            }
+        }
+    }
+
     render(){
         return (
             <div className="Routes">
                 <Switch>
                     <Route exact path="/" component={Home} />
-                    <Route path="/editor" component={EditorView} />
-                    <Route path="/table" component={TableView} />
-                    <Route path="/import" component={ImportView} />
+                    <Route exact path="/editor" component={EditorView} />
+
+                    <Route exact path="/table" component={TableView} />
+                    <Route exact path="/import" component={ImportView} />
                 </Switch>
             </div>
         );
