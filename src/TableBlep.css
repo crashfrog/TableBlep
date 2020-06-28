@@ -172,7 +172,7 @@ nav li:hover, nav a:hover, .button:hover {
 
 
 #MenuBar {
-  grid-column: 0 / 6;
+  grid-column: 5 / -1;
   grid-row: 1 / 2;
   /* position:absolute; */
   display:flex;
@@ -214,11 +214,12 @@ nav li:hover, nav a:hover, .button:hover {
 
 #ChatBox {
   grid-column: 5 / 6;
-  grid-row: 3 / 6;
+  grid-row: 2 / 6;
   position:relative;
   margin:20px;
   border:5px;
   padding:5px;
+  font-size: 11pt;
 }
 
 #ChatDisplay {

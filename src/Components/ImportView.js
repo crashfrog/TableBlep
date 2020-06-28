@@ -14,18 +14,18 @@ import Converter from './Import/Engine/Converter.js';
 
         render() {
 
-            const loadViaFileReader = (file) => {
-                this.setState({message: "Loading..."});
-                console.log(file);
-                let reader = new FileReader();
-                reader.onload = (event) => {
-                    this.setState({isLoaded:true});
-                    this.setState({file:reader.result});
-                };
-                //reader.onload = (event) => this.setState({isLoaded:true});
-                //reader.onload = (event) => console.log(reader.result);
-                reader.readAsDataURL(file);
-            }
+            // const loadViaFileReader = (file) => {
+            //     this.setState({message: "Loading..."});
+            //     console.log(file);
+            //     let reader = new FileReader();
+            //     reader.onload = (event) => {
+            //         this.setState({isLoaded:true});
+            //         this.setState({file:reader.result});
+            //     };
+            //     //reader.onload = (event) => this.setState({isLoaded:true});
+            //     //reader.onload = (event) => console.log(reader.result);
+            //     reader.readAsDataURL(file);
+            // }
 
             const loadViaObjectURL = (file) => {
                 this.setState({message: "Loading..."});

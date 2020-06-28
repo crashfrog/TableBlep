@@ -141,6 +141,7 @@ export default class Engine {
         
         this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
         this.camera.setFocalLength(18);
+        this.camera.position.set(200, 100, 200);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize( window.innerWidth, window.innerHeight );
         this.renderer.shadowMap.enabled = true;
