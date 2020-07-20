@@ -246,32 +246,32 @@ export default class Engine {
 
         // Register to receive model events
 
-        Model.addEventListener( EVENTS.Initalize, (event) => {
-            this.newScene();
-        }, false );
+        // Model.addEventListener( EVENTS.Initalize, (event) => {
+        //     this.newScene();
+        // }, false );
 
-        Model.addEventListener( EVENTS.AddItem, (event) => {
-            this.loadMesh(event);
-        }, false );
+        // Model.addEventListener( EVENTS.AddItem, (event) => {
+        //     this.loadMesh(event);
+        // }, false );
 
-        Model.addEventListener( EVENTS.MoveItem, (event) => {
-            let mesh = this.meshesById.get(event.mesh.id);
-            let {x, y, z} = event.mesh.position;
-            let {i, j, k, w} = event.mesh.quaternion;
-            mesh.position.set(x, y, z);
-            mesh.quaternion.set(i, j, k, w);
-            mesh.ghost.position.copy(mesh.position);
-            mesh.ghost.quaternion.copy(mesh.quaternion);
-        }, false );
+        // Model.addEventListener( EVENTS.MoveItem, (event) => {
+        //     let mesh = this.meshesById.get(event.mesh.id);
+        //     let {x, y, z} = event.mesh.position;
+        //     let {i, j, k, w} = event.mesh.quaternion;
+        //     mesh.position.set(x, y, z);
+        //     mesh.quaternion.set(i, j, k, w);
+        //     mesh.ghost.position.copy(mesh.position);
+        //     mesh.ghost.quaternion.copy(mesh.quaternion);
+        // }, false );
 
-        Model.addEventListener( EVENTS.RemoveItem, (event) => {
-            let mesh = this.meshesById.get(event.mesh.id);
-            if (mesh) {
-                mesh.material.visible = false;
-                mesh.material.dispose();
-                mesh.dispose();
-            }
-        }, false);
+        // Model.addEventListener( EVENTS.RemoveItem, (event) => {
+        //     let mesh = this.meshesById.get(event.mesh.id);
+        //     if (mesh) {
+        //         mesh.material.visible = false;
+        //         mesh.material.dispose();
+        //         mesh.dispose();
+        //     }
+        // }, false);
 
 
         // animate and render scene
@@ -285,6 +285,8 @@ export default class Engine {
         animate();
 
     }
+
+    
 
     newScene(){
 
@@ -344,9 +346,67 @@ export default class Engine {
 
     }
 
-    initializeMesh(geometry, event){
+    initialMapLoad(){
 
-        let mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
+        const model = this.model;
+
+        const meshMap = new Map();
+
+        const instancedFastforwardMeshLoader = (event) => {
+            if (!meshMap.has(event.mesh.ref)){
+                meshMap.set(event.mesh.ref, [])
+            }
+            meshMap.get(event.mesh.ref).push(event)
+        };
+
+        const fastforwardCompleteListener = (event) => {
+            model.removeEventListener( EVENTS.AddItem, instancedFastforwardMeshLoader);
+
+            for (const [ref, events] of meshMap){
+                if (events.size < 2 && events.size > 0){
+                    this.loadMesh(events[0]);
+                } else {
+                    this.instancedLoadMesh(ref, events);
+                }
+            }
+
+            model.addEventListener( EVENTS.AddItem, (e) => {this.loadMesh(e)}, false)
+        }
+
+        model.addEventListener( EVENTS.AddItem, instancedFastforwardMeshLoader, false);
+        model.addEventListener( model.FastforwardComplete, fastforwardCompleteListener, false);
+    }
+
+    loadMesh(event){
+        this.model.getGeometry(
+            (geometry) => {
+                let mesh = new THREE.Mesh(geometry, MATERIALS.get(event.mesh.layer).clone());
+                this.initializeMesh(mesh, event);
+            },
+            event.mesh.ref,
+            event.mesh.format
+        );
+    }
+
+    instancedLoadMesh(ref, events){
+        this.model.getGeometry(
+            (geometry) => {
+                let meshes = new THREE.InstancedMesh(
+                    geometry,
+                    MATERIALS.get(event.mesh.layer).clone(),
+                    events.size
+                );
+            },
+            ref,
+            events[0].mesh.format //they should all be the same
+        );
+    }
+
+    positionMesh(matrix, )
+
+    initializeMesh(mesh, event){
+
+        
 
         let m = event.mesh;
 
@@ -367,7 +427,7 @@ export default class Engine {
             case LAYERS.Pieces:
                 // Pieces stuff
                 // create a ghost mesh for piece movement
-                let ghost_mesh = new THREE.Mesh(geometry, GHOST_MATERIAL.clone());
+                let ghost_mesh = new THREE.Mesh(mesh.geometry, GHOST_MATERIAL.clone());
                 ghost_mesh.position.copy(mesh.position);
                 ghost_mesh.quaternion.copy(mesh.quaternion);
                 ghost_mesh.of = mesh;
@@ -390,15 +450,7 @@ export default class Engine {
         this.scene.add(mesh);
     }
 
-    loadMesh(event){
-        Model.getGeometry(
-            (geometry) => {
-                this.initializeMesh(geometry, event);
-            },
-            event.mesh.ref,
-            event.mesh.format
-        );
-    }
+    
 
     onWindowResize() {
 

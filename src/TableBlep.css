@@ -108,7 +108,7 @@ nav li:hover, nav a:hover, .button:hover {
   
   font-size: calc(10px + 2vmin);
   grid-template-columns: 25% 20% auto 20% 25%;
-  grid-template-rows: 45px 20% auto 30% 60px;
+  grid-template-rows: 45px 20% auto 30% 10%;
 
 }
 
@@ -128,6 +128,36 @@ nav li:hover, nav a:hover, .button:hover {
   background-color: var(--transparent);
 }
 
+button {
+  background-color: var(--ui-color);
+}
+
+#cell {
+  display: inline-block;
+  border: none;
+  outline: none;
+  border-radius: 0px;
+  margin: 1px;
+  height:20px;
+  width:20px;
+  z-index: 1;
+}
+
+button#cell:hover {
+  background-color: var(--ui-border);
+  box-shadow: 0 0 6px 6px rgba(170,170,255,0.2);
+  z-index:1;
+}
+
+#cell.disabled {
+  background-color: var(--ui-color);
+  z-index:20;
+}
+
+#cell.enabled {
+  background-color: var(--ui-border);
+}
+
 #ModelBaseSelector {
   grid-column: 3/4;
   grid-row: 1/2;
@@ -139,23 +169,23 @@ nav li:hover, nav a:hover, .button:hover {
 }
 
 #ModelPurposeSelector {
-  grid-column: 4/-1;
+  grid-column: 5/-1;
   grid-row: 1/3;
 }
 
 #ModelDecimateSelector {
   grid-column: 3/4;
-  grid-row: 4/-1;
+  grid-row: 5/-1;
 }
 
 #ResetModelTransformations {
   grid-column: 1/2;
-  grid-row: 4/-1;
+  grid-row: 5/-1;
 }
 
 #SaveModelToToybox {
-  grid-column: 4/-1;
-  grid-row: 4/-1;
+  grid-column: 5/-1;
+  grid-row: 5/-1;
 }
 
 #Viewport {

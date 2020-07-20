@@ -20,6 +20,19 @@ const TAU = 2 * Math.PI;
 const HORIZON = 0x000000;
 const GROUND = 0x222222;
 
+const HOLOS = new THREE.MeshPhongMaterial({
+    color:          0xce8821,
+    emissive:       0x4c3030,
+    transparent:    true,
+    opacity:        0.25,
+    depthTest:      true,
+    depthWrite:     true,
+    side:           THREE.DoubleSide,
+    shininess:      0.0,
+    specular:       0xce8821,
+
+});
+
 function newGrid(squares){
     return new THREE.GridHelper(SCALE * squares,
                                 squares,
@@ -40,6 +53,8 @@ export default class Converter extends Component {
             scaleFactor: 1.0,
             snapsTo: SNAP.Center,
         };
+
+        this.guides = [];
 
         const scene = new THREE.Scene();
         const group = new THREE.Group();
@@ -188,6 +203,35 @@ export default class Converter extends Component {
             this.setState({modelEyeline: h});
         });
 
+        const southWall = new THREE.Mesh(
+            new THREE.BoxBufferGeometry(50, 50, 12.5, 1, 1, 1),
+            HOLOS.clone()
+        );
+        southWall.translateZ(-31.25);
+        southWall.translateY(25);
+        scene.add(southWall);
+
+        const eastWall = new THREE.Mesh(
+            new THREE.BoxBufferGeometry(50, 50, 12.5, 1, 1, 1),
+            HOLOS.clone()
+        )
+        eastWall.rotateY(TAU / 4);
+        eastWall.translateZ(-31.25);
+        eastWall.translateY(25);
+        scene.add(eastWall);
+
+        const westWall = new THREE.Mesh(
+            new THREE.BoxBufferGeometry(50, 50, 12.5, 1, 1, 1),
+            HOLOS.clone()
+        )
+        westWall.rotateY(-TAU / 4);
+        westWall.translateZ(-31.25);
+        westWall.translateY(25);
+        scene.add(westWall);
+
+        this.guides = [southWall, eastWall, westWall];
+
+
         animate();
 
     }
@@ -202,7 +246,41 @@ export default class Converter extends Component {
         //this.grid.dispose();
         this.grid = newGrid(scale);
         this.scene.add( this.grid );
-        this.setState({snapsTo: scale % 2 ? SNAP.Intersection : SNAP.Center });
+        this.setState({snapsTo: scale % 2 ? SNAP.Intersection : SNAP.Center ,
+                       modelScale: scale})
+                       ;
+    }
+
+    changeWallGuides(scale, type){
+        for (let guide of this.guides){
+            guide.material.visible = false;
+        }
+        if (type === TILE.wall){
+            this.guides[0].position.z = 0;
+        } else {
+            this.guides[0].position.z = -31.25;
+        }
+        switch (type){
+            case TILE.floor:
+            case TILE.mini:
+                break;
+            case TILE.wall:
+            case TILE.edge:
+                this.guides[0].material.visible = true;
+                break;
+            case TILE.corner:
+                this.guides[0].material.visible = true;
+                this.guides[1].material.visible = true;
+                break;
+            case TILE.hall:
+                this.guides[1].material.visible = true;
+                this.guides[2].material.visible = true;
+                break;
+            case TILE.nook:
+                this.guides[0].material.visible = true;
+                this.guides[1].material.visible = true;
+                this.guides[2].material.visible = true;
+        }
     }
 
     exportToToybox(){
@@ -235,9 +313,10 @@ export default class Converter extends Component {
                             break;
                     }
                  }} state={this.state} /> :
-                 <TileScaleSelector onChange={(event) => {
-                    this.changeGridSpacing(event.target.value + 2);
-                 }} state={this.state} /> 
+                 <div />
+                //  <TileScaleSelector onChange={(event) => {
+                //     this.changeGridSpacing(4);
+                //  }} state={this.state} /> 
                 }
                 {this.state.modelType === TILE.mini &&
                  <ModelBaseSelector onChange={(event) => {
@@ -251,15 +330,17 @@ export default class Converter extends Component {
                     } else {
                         this.eyelinePlane.material.visible = false;
                         this.eyelinePlane.controls.enabled = false;
+                        this.changeGridSpacing(4);
                         this.setState({modelScale: 2});
                     }
+                    this.changeWallGuides(0, event.target.value);
                     this.setState({modelType: event.target.value});
                 }} state={this.state} />
                 <SaveModelToToybox onClick={(event) => {
                     this.exportToToybox();
                 }} state={this.state} />
                 <ResetModelTransformations onClick={(event) => {
-
+                    this.mesh.matrix.copy(this.mesh.originalTransformation);
                 }} state={this.state} />
                 <ModelDecimateSelector onChange={(event) => {
 
@@ -279,18 +360,7 @@ function hover(color){
 function ModelEyelineControls(scene, camera, renderer, competingControls, callback){
     const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(1.5 * SCALE, 1.5 * SCALE, 1),
-        new THREE.MeshPhongMaterial({
-            color:          0xce8821,
-            emissive:       0x4c3030,
-            transparent:    true,
-            opacity:        0.25,
-            depthTest:      true,
-            depthWrite:     true,
-            side:           THREE.DoubleSide,
-            shininess:      0.0,
-            specular:       0xce8821,
-
-        })
+        HOLOS.clone()
     );
 
     plane.rotateX(- TAU / 4);
@@ -372,7 +442,8 @@ function ModelPurposeSelector(props){
     const descriptions = {
         mini: "a figurine",
         floor: "tile, no walls",
-        wall: "tile, one wall",
+        wall: "wall, no floor",
+        edge: "tile, one wall",
         corner: "tile, two walls meeting",
         hall: "tile, two walls opposite",
         nook: "tile, three walls"
