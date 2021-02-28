@@ -1,0 +1,212 @@
+[
+    {
+       "_id":"A",
+       "event":{
+           "type":"initialize"
+        }
+    },
+    {
+        "_id":"B",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_corner",
+                "ref":"bafybeia4cxewfcvehnhnsxysxak47f7seafgwkvt4eoywowj65u7xfnmlq",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-30, "y":0, "z":0},
+                "rotation":{"i":-0.7071, "j":0, "k":0, "w":0.7071},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"C",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_wall",
+                "ref":"bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-75, "y":0, "z":0},
+                "rotation":{"i":-0.7071, "j":0, "k":0, "w":0.7071},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"D",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_wall",
+                "ref":"bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-125, "y":0, "z":0},
+                "rotation":{"i":-0.7071, "j":0, "k":0, "w":0.7071},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"E",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_corner",
+                "ref":"bafybeia4cxewfcvehnhnsxysxak47f7seafgwkvt4eoywowj65u7xfnmlq",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-175, "y":0, "z":0},
+                "rotation":{"i":-0.5, "j":-0.5, "k":-0.5, "w":0.5},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"F",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_wall",
+                "ref":"bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-175, "y":0, "z":0},
+                "rotation":{"i":-0.5, "j":-0.5, "k":-0.5, "w":0.5},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"G",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_corner",
+                "ref":"bafybeia4cxewfcvehnhnsxysxak47f7seafgwkvt4eoywowj65u7xfnmlq",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-125, "y":0, "z":-150},
+                "rotation":{"i":0, "j":0.7071, "k":0.7071, "w":0},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"H",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_wall",
+                "ref":"bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-75, "y":0, "z":-150},
+                "rotation":{"i":0, "j":0.7071, "k":0.7071, "w":0},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"I",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_wall",
+                "ref":"bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-25, "y":0, "z":-150},
+                "rotation":{"i":0, "j":0.7071, "k":0.7071, "w":0},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"J",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_corner",
+                "ref":"bafybeia4cxewfcvehnhnsxysxak47f7seafgwkvt4eoywowj65u7xfnmlq",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":25, "y":0, "z":-100},
+                "rotation":{"i":-0.5, "j":0.5, "k":0.5, "w":0.5},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"K",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_wall",
+                "ref":"bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":26, "y":0, "z":-55},
+                "rotation":{"i":-0.5, "j":0.5, "k":0.5, "w":0.5},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"L",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_floor",
+                "ref":"bafybeibpbh4jfch6xfguyeed5blqvirwqbkdngjjnkyjbsq7lbc64zwryq",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-75, "y":0, "z":-55},
+                "rotation":{"i":-0.7071, "j":0, "k":0, "w":0.7071},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    },
+    {
+        "_id":"M",
+        "event":{
+            "type":"add_item",
+            "mesh":{
+                "id":"stone_floor",
+                "ref":"bafybeibpbh4jfch6xfguyeed5blqvirwqbkdngjjnkyjbsq7lbc64zwryq",
+                "format":"stl",
+                "snapOffset":{"x":0, "y":0, "z":0},
+                "position":{"x":-125, "y":0, "z":-55},
+                "rotation":{"i":-0.7071, "j":0, "k":0, "w":0.7071},
+                "layer":"map"
+            },
+            "owner":{},
+            "metadata":{}
+        }
+    }
+]

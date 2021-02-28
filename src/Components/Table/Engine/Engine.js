@@ -1,4 +1,4 @@
-import Model from './Model.js';
+//import Model from './Model.js';
 import * as THREE from 'three';
 import C from 'cannon';
 import EVENTS from '../../../Enums/eventTypes.js';
@@ -135,9 +135,11 @@ function switchCameraToOverheadView(camera, position){
 
 export default class Engine {
 
-    constructor(){
+    constructor(model){
 
         let _this = this;
+
+        this.model = model;
         
         this.camera = new CinematicCamera( 75, window.innerWidth / window.innerHeight, 0.1, 3000 );
         this.camera.setFocalLength(18);
@@ -222,7 +224,7 @@ export default class Engine {
             controls.update();
             controls.enabled = true;
 
-            Model.moveMesh(mesh.id, mesh.layer, ghost.position, ghost.quaternion, {});
+            model.moveMesh(mesh.id, mesh.layer, ghost.position, ghost.quaternion, {});
 
             ghost.material.visible.set( false );
 
@@ -393,7 +395,7 @@ export default class Engine {
             (geometry) => {
                 let meshes = new THREE.InstancedMesh(
                     geometry,
-                    MATERIALS.get(event.mesh.layer).clone(),
+                    MATERIALS.get(events[0].mesh.layer).clone(),
                     events.size
                 );
             },
@@ -402,7 +404,7 @@ export default class Engine {
         );
     }
 
-    positionMesh(matrix, )
+    // positionMesh(matrix, )
 
     initializeMesh(mesh, event){
 

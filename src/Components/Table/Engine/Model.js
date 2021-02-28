@@ -1,6 +1,6 @@
 //import Engine from './Engine.js';
 
-import { Database, Identity, UserAuth, ThreadID } from '@textile/threads';
+import { Buckets, Identity } from '@textile/threads';
 import { collect } from 'streaming-iterables'
 //import { ThreadID } from '@textile/threads-id';
 import EVENTS from '../../../Enums/eventTypes.js';
@@ -596,7 +596,7 @@ const event_collection_schema = {
 //         format:'stl',
 //         snapOffset:{x:0, y:0, z:0},
 //         position:{x:25, y:0, z:-100},
-//         rotation:WEST,
+//         rotation:WEST,  #####
 //     }
 // });
 // this.loadMesh({
@@ -659,3 +659,9 @@ const event_collection_schema = {
 // + stone_wall.stl: bafybeicf5zm2qnd2ksbl2y3tyv3y3l57bgwovlwumskdwckuvemnghhk2i
 // + stone_wall_end.stl: bafybeiffzwjfqmqbghvthd3n6nm2zfvdhzt3u2v4vycjqlxcdv47kmissy
 // > bafybeibyjyp2yvpoeq6dbrf3mwcna57gwnthqzxr72frmjulq2loibr6fy
+
+
+// const NORTH = {"i":-0.7071, "j":0, "k":0, "w":0.7071};
+// const EAST = {"i":-0.5, "j":-0.5, "k":-0.5, "w":0.5};
+// const SOUTH = {"i":0, "j":0.7071, "k":0.7071, "w":0};
+// const WEST = {"i":-0.5, "j":0.5, "k":0.5, "w":0.5};

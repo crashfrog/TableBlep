@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
-import Exporter from 'Components/Editor/Exporter.js';
-import Randomizer from 'Components/Editor/Randomizer.js';
+import Exporter from './Editor/Exporter.js';
+import Randomizer from './Editor/Randomizer.js';
 
 // class EditorView extends Component {
 

@@ -9,7 +9,7 @@ export default class ViewPort extends Component {
         // const world = newPhysicsWorld();
         // const model = new Model();
         // const scene = new Scene(model, world);
-        const engine = new Engine();
+        const engine = new Engine(Model);
         this.mount.appendChild( engine.renderer.domElement );
     }
 

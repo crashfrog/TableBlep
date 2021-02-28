@@ -7,9 +7,9 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { CinematicCamera } from 'three/examples/jsm/cameras/CinematicCamera.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import SIZE from 'Enums/sizeTypes.js';
-import TILE from 'Enums/tileTypes';
-import SNAP from 'Enums/snapTypes.js';
+import SIZE from '../../../Enums/sizeTypes.js';
+import TILE from '../../../Enums/tileTypes';
+import SNAP from '../../../Enums/snapTypes.js';
 
 /*
 Module to import STL files and convert to GLTF, permitting resizing, reorienting, and setting the rotation centroid.
